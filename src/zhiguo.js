@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createSkatingMotion } from './skating-motion.js';
 import { createPhotographicRig } from './zhiguo-rig.js';
+import { createSkaterLegs } from './skater-legs.js';
 
 // Photographic eight-direction impostor, not a scanned 3D human model.
 const DIRECTIONS = ['正面', '右前方', '右侧面', '右后方', '背面', '左后方', '左侧面', '左前方'];
@@ -15,6 +16,9 @@ export function createZhiguo() {
   const state = { ready: false, error: null, direction: 0, directionLabel: DIRECTIONS[0], phase: 0, cheer: 0, collect: 0 };
   const motion = createSkatingMotion();
   const rig = createPhotographicRig();
+  const legs = createSkaterLegs();
+  root.add(legs.root); legs.root.visible = false;
+  rig.state = legs.state;
   let poseContext = { speed: 0, trick: 0 };
   const uniforms = {
     uMapA: { value: null },
@@ -27,12 +31,15 @@ export function createZhiguo() {
     vertexShader: `
       varying vec2 vUv;
       varying float vMask;
+      varying float vArmOnly;
       uniform mat3 uBones[11];
       attribute vec4 aBone, aWeight;
       attribute float aMask;
+      attribute float aArmOnly;
       void main() {
         vUv = uv;
         vMask = aMask;
+        vArmOnly = aArmOnly;
         vec3 source = vec3(position.xy, 1.0);
         vec3 deformed = uBones[int(aBone.x)] * source * aWeight.x
           + uBones[int(aBone.y)] * source * aWeight.y
@@ -45,6 +52,7 @@ export function createZhiguo() {
     fragmentShader: `
       varying vec2 vUv;
       varying float vMask;
+      varying float vArmOnly;
       uniform sampler2D uMapA;
       uniform vec2 uCell;
       uniform float uLight;
@@ -52,8 +60,11 @@ export function createZhiguo() {
         vec2 atlasUv = (vUv + uCell) / vec2(4.0, 2.0);
         vec4 a = texture2D(uMapA, atlasUv);
         if (vMask < 0.5) discard;
+        // Below the shirt hem only bare hands/arms belong to the photo.
+        // Nearby dark shorts must not be retained by a wrist's broad mask.
+        if (vArmOnly > 0.5 && (a.r < 0.25 || a.r < a.g * 1.08 || a.g < a.b * 1.03)) discard;
         float opacity = a.a;
-        if (opacity < 0.035) discard;
+        if (opacity < 0.12) discard;
         vec3 rgb = a.rgb;
         gl_FragColor = vec4(rgb * uLight, opacity);
         #include <tonemapping_fragment>
@@ -64,7 +75,7 @@ export function createZhiguo() {
   const portrait = new THREE.Group();
   const layers = rig.geometries[0].map(geometry => new THREE.Mesh(geometry,material));
   portrait.add(...layers);
-  portrait.position.y = 0.96; portrait.visible = false; body.add(portrait);
+  portrait.position.set(0,0.96,0.12); portrait.visible = false; body.add(portrait);
 
   const shadowCanvas = document.createElement('canvas'); shadowCanvas.width = shadowCanvas.height = 64;
   const c = shadowCanvas.getContext('2d');
@@ -83,7 +94,7 @@ export function createZhiguo() {
       texture.minFilter = THREE.LinearMipmapLinearFilter;
     }
     uniforms.uMapA.value = a;
-    state.ready = true; portrait.visible = true;
+    state.ready = true; portrait.visible = true; legs.root.visible = true;
   }).catch(error => {
     state.error = '角色图片加载失败';
     throw error;
@@ -95,18 +106,21 @@ export function createZhiguo() {
     root.updateWorldMatrix(true, false);
     camera.getWorldPosition(cameraLocal); root.worldToLocal(cameraLocal);
     const angle = (Math.atan2(cameraLocal.z, cameraLocal.x) + TAU) % TAU;
-    const index = Math.round(angle / TAU * 8) % 8;
+    const delta = ((angle-state.direction*TAU/8+Math.PI+TAU)%TAU)-Math.PI;
+    const index = Math.abs(delta)<Math.PI/8+0.035?state.direction:Math.round(angle / TAU * 8) % 8;
     state.direction = index; state.directionLabel = DIRECTIONS[index];
     layers.forEach((mesh,part)=>{mesh.geometry = rig.geometries[index][part];});
     rig.pose(index, motion.state, poseContext);
     uniforms.uCell.value.set(index % 4, 1 - Math.floor(index / 4));
     body.rotation.y = Math.atan2(cameraLocal.x, cameraLocal.z);
     portrait.visible = state.ready && !hide;
+    legs.root.visible = state.ready && !hide;
   }
 
   function update(dt, ctx) {
     poseContext = ctx;
     motion.update(dt, ctx);
+    legs.pose(motion.state,ctx,dt);
     state.phase = motion.state.phase;
     state.cadenceSpm = motion.state.cadenceSpm;
     state.gait = motion.state;
@@ -118,6 +132,6 @@ export function createZhiguo() {
     shadowMaterial.opacity = ctx.airborne ? 0.4 : 0.85;
     mouth.position.y = 1.43 + body.position.y - motion.state.bodyDip;
   }
-  return { root, body, head, knot, mouth, hitMeshes: layers, update, orient, ready, state, rig,
+  return { root, body, head, knot, mouth, hitMeshes: [...layers,...legs.legs.flatMap(l=>[l.thigh,l.shin,l.skate])], update, orient, ready, state, rig, legs,
     honk() { state.cheer = 1; }, gulp() { state.collect = 0.4; } };
 }

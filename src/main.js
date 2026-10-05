@@ -624,7 +624,9 @@ function updateRide(dt) {
   S.wheelie = damp(S.wheelie, wheelieT, 6, dt);
 
   rider.position.set(0, S.y, S.lane);
-  rider.rotation.set(S.lean, -Math.atan2(S.laneV, Math.max(S.speed, 1.5)), 0);
+  // On the road, lean the hips and torso while keeping the skate contact
+  // plane level. Rolling the whole rider would push the outer skate underground.
+  rider.rotation.set(S.airborne ? S.lean : 0, -Math.atan2(S.laneV, Math.max(S.speed, 1.5)), 0);
   wheelieRoot.rotation.z = S.airborne ? S.vy * 0.012 : 0;
   wheelieRoot.rotation.y = S.trick * Math.sin(S.time * 2.5) * 0.22;
   rider.updateMatrixWorld(true);
@@ -1296,6 +1298,8 @@ function frame(ts) {
     crankAngle: S.crank,
     pedal: S.pedaling ? 1 : 0.3,
     airborne: S.airborne ? 1 : 0,
+    airHeight: S.y,
+    lean: S.lean,
     trick: S.trick,
     accel: S.accel,
     look: computeLook(dt),

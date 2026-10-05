@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { solveTwoBone } from './util.js';
 
 // Pixel landmarks in the existing reference atlas: hip, knee, ankle, sole,
 // then shoulder, elbow and wrist. Right and left are anatomical directions.
@@ -9,11 +8,19 @@ const VIEWS = [
   { R:[[183,309],[139,384],[80,466],[48,534]], L:[[233,309],[247,382],[233,477],[251,540]], A:[[230,175],[265,239],[325,266]], B:null, torso:[[182,142],[249,142],[238,309],[146,309]] },
   { R:[[250,312],[243,386],[239,477],[246,540]], L:[[192,313],[140,392],[80,471],[48,532]], A:[[267,179],[288,237],[321,268]], B:[[179,170],[156,234],[118,295]] },
   { R:[[272,315],[314,393],[373,472],[417,537]], L:[[224,315],[225,383],[222,475],[219,538]], A:[[304,168],[321,233],[350,264]], B:[[188,170],[167,244],[145,297]] },
-  { R:[[266,310],[324,391],[372,472],[413,536]], L:[[220,310],[212,385],[226,476],[231,540]], A:[[270,173],[295,233],[323,283]], B:[[216,166],[199,241],[145,287]] },
-  { R:[[245,319],[305,395],[367,476],[405,538]], L:[[221,315],[189,386],[211,481],[216,540]], A:[[241,185],[251,258],[269,315]], B:[[215,180],[190,239],[141,267]] },
+  { R:[[290,310],[324,391],[372,472],[413,536]], L:[[258,310],[212,385],[226,476],[231,540]], A:null, B:[[216,166],[190,239],[145,287]] },
+  { R:[[270,319],[305,395],[367,476],[405,538]], L:[[262,315],[189,386],[211,481],[216,540]], A:[[288,194],[307,260],[313,319]], B:[[224,185],[193,250],[159,274]] },
   { R:[[219,313],[218,386],[220,479],[221,540]], L:[[268,313],[313,395],[372,476],[403,536]], A:[[188,172],[160,244],[126,291]], B:[[284,170],[290,245],[309,309]] },
 ];
 const SCALE = 280;
+// Shirt hems vary by view. Exclude the old photographed shorts as well as
+// the legs; a horizontal cut would leave a second, floating pair of shorts.
+const HEMS = [
+  [[150,277],[207,306],[273,279]], [[157,282],[213,303],[263,280]],
+  [[149,281],[204,307],[241,315]], [[171,285],[242,304],[283,291]],
+  [[189,289],[249,303],[306,277]], [[214,304],[276,309],[339,299]],
+  [[230,316],[279,302],[335,317]], [[179,280],[249,308],[301,294]],
+];
 const point = ([x,y]) => new THREE.Vector2((x-240)/SCALE, (280-y)/SCALE);
 const clamp = (v,a,b) => Math.min(b,Math.max(a,v));
 
@@ -34,16 +41,21 @@ function chainWeights(p,chain,ids) {
   }
   return {d:a.d,weights};
 }
-function geometryFor(view) {
-  // Separate source regions prevent triangles between two legs folding across
-  // the empty space in the atlas when the photographed stride is regrouped.
-  const parts=Array.from({length:3},()=>new THREE.PlaneGeometry(12/7,2,80,112));
-  const uv=parts[0].attributes.uv;
-  const data=parts.map(()=>({indexes:new Float32Array(uv.count*4),weights:new Float32Array(uv.count*4),mask:new Float32Array(uv.count)}));
-  const minHip=Math.min(view.R[0][1],view.L[0][1]);
+function geometryFor(view,index) {
+  // Only the face, shirt and arms use the photograph. No photographed leg
+  // vertices are deformed, so a knee can never fold or stretch the image.
+  const geometry=new THREE.PlaneGeometry(12/7,2,64,80);
+  const uv=geometry.attributes.uv;
+  const data={indexes:new Float32Array(uv.count*4),weights:new Float32Array(uv.count*4),mask:new Float32Array(uv.count),armOnly:new Float32Array(uv.count)};
+  const minHip=(view.R[0][1]+view.L[0][1])/2;
+  const hem=HEMS[index];
+  const hemHeight=x=>{
+    if(x<=hem[0][0])return hem[0][1];
+    for(let j=1;j<hem.length;j++)if(x<hem[j][0])return hem[j-1][1]+(hem[j][1]-hem[j-1][1])*(x-hem[j-1][0])/(hem[j][0]-hem[j-1][0]);
+    return hem.at(-1)[1];
+  };
   for(let n=0;n<uv.count;n++) {
     const p=[uv.getX(n)*480,(1-uv.getY(n))*560];
-    const r=chainWeights(p,view.R,[1,2,3]),l=chainWeights(p,view.L,[4,5,6]);
     const armA=view.A?chainWeights(p,view.A,[7,8]):{d:Infinity,weights:[[0,1]]};
     const armB=view.B?chainWeights(p,view.B,[9,10]):{d:Infinity,weights:[[0,1]]};
     let armMask=0;
@@ -57,11 +69,6 @@ function geometryFor(view) {
       const outside=Math.max(left-p[0],p[0]-right);
       armMask=clamp((outside+10)/20,0,1)*clamp((40-Math.min(armA.d,armB.d))/8,0,1);
     }
-    const legMask=(p[1]>minHip+34?1:0)*(1-armMask);
-    const rightMask=r.d<l.d?1:0;
-    const masks=[1-legMask,legMask*rightMask,legMask*(1-rightMask)];
-    const hipBlend=clamp((p[1]-minHip-38)/42,0,1);
-    const withBody=result=>result.map(([id,w])=>[id,w*hipBlend]).concat([[0,1-hipBlend]]);
     const armRoot=(chain,result)=>{
       if(!chain)return [[0,1]];
       const blend=clamp((p[1]-chain[0][1]-8)/Math.max(chain[1][1]-chain[0][1]-8,25),0,1);
@@ -69,18 +76,17 @@ function geometryFor(view) {
     };
     const arm=armA.d<armB.d?armRoot(view.A,armA):armRoot(view.B,armB);
     const torsoWeights=arm.map(([id,w])=>[id,w*armMask]).concat([[0,1-armMask]]);
-    const results=[torsoWeights,withBody(r.weights),withBody(l.weights)];
-    data.forEach((part,i)=>{
-      part.mask[n]=masks[i];
-      results[i].slice(0,4).forEach(([id,w],k)=>{part.indexes[n*4+k]=id;part.weights[n*4+k]=w;});
-    });
+    data.mask[n]=p[1]<hemHeight(p[0])||armMask>0.5?1:0;
+    data.armOnly[n]=p[1]>=hemHeight(p[0])?1:0;
+    // Merge repeated body weights before packing the four shader influences.
+    const merged=new Map();for(const [id,w] of torsoWeights)merged.set(id,(merged.get(id)??0)+w);
+    [...merged].forEach(([id,w],k)=>{data.indexes[n*4+k]=id;data.weights[n*4+k]=w;});
   }
-  return parts.map((geometry,i)=>{
-    geometry.setAttribute('aBone',new THREE.BufferAttribute(data[i].indexes,4));
-    geometry.setAttribute('aWeight',new THREE.BufferAttribute(data[i].weights,4));
-    geometry.setAttribute('aMask',new THREE.BufferAttribute(data[i].mask,1));
-    return geometry;
-  });
+  geometry.setAttribute('aBone',new THREE.BufferAttribute(data.indexes,4));
+  geometry.setAttribute('aWeight',new THREE.BufferAttribute(data.weights,4));
+  geometry.setAttribute('aMask',new THREE.BufferAttribute(data.mask,1));
+  geometry.setAttribute('aArmOnly',new THREE.BufferAttribute(data.armOnly,1));
+  return [geometry];
 }
 function segmentMatrix(matrix,a,b,c,d) {
   const r=b.clone().sub(a),t=d.clone().sub(c),lr=r.length(),lt=t.length();
@@ -97,41 +103,17 @@ function segmentMatrix(matrix,a,b,c,d) {
 export function createPhotographicRig() {
   const geometries=VIEWS.map(geometryFor);
   const matrices=Array.from({length:11},()=>new THREE.Matrix3());
-  const hip=new THREE.Vector3(),ankle=new THREE.Vector3(),knee=new THREE.Vector3(),end=new THREE.Vector3(),pole=new THREE.Vector3(1,0,0);
   const tmp=new THREE.Vector2();
-  const state={rightSoleHeight:0.03,leftSoleHeight:0.03,kneeBend:0};
   function pose(index,motion,ctx) {
-    state.kneeBend=0;
     const view=VIEWS[index],angle=index*Math.PI/4;
     const forward=Math.sin(angle),lateral=-Math.cos(angle);
-    const bodyX=motion.shift*lateral;
-    const bodyY=-motion.bodyDip;
-    const torsoAngle=-forward*(0.035+Math.min(ctx.speed/15,1)*0.055);
+    const bodyX=motion.shift*lateral-0.025*forward;
+    const torsoAngle=-forward*(0.035+Math.min(ctx.speed/15,1)*0.055)-lateral*clamp(ctx.lean??0,-0.28,0.28)*0.55;
     const centre=point([(view.R[0][0]+view.L[0][0])/2,(view.R[0][1]+view.L[0][1])/2]);
+    const bodyY=(motion.hipHeight??0.935-motion.bodyDip)-0.96-centre.y;
     const ca=Math.cos(torsoAngle),sa=Math.sin(torsoAngle);
-    matrices[0].set(ca,-sa,centre.x-ca*centre.x+sa*centre.y+bodyX,
+    matrices[0].set(ca,-sa,-ca*centre.x+sa*centre.y+bodyX,
       sa,ca,centre.y-sa*centre.x-ca*centre.y+bodyY,0,0,1);
-    for(const [name,side,offset] of [['R',1,1],['L',-1,4]]) {
-      const chain=view[name],foot=name==='R'?motion.right:motion.left;
-      const source=chain.map(point),base=source[0];
-      const hipHeight=0.96+base.y;
-      const bootHeight=(chain[3][1]-chain[2][1])/SCALE+0.03;
-      hip.set(0,hipHeight+bodyY,side*0.10+motion.shift);
-      ankle.set(0.045-foot.out*0.12,bootHeight+foot.lift,side*(0.10+foot.out));
-      solveTwoBone(hip,ankle,0.315,0.33,pole,knee,end);
-      const projection=p=>new THREE.Vector2(base.x+forward*(p.x-hip.x)+lateral*(p.z-side*0.10),base.y+(p.y-hipHeight));
-      const h=projection(hip),k=projection(knee),a=projection(end);
-      segmentMatrix(matrices[offset],source[0],source[1],h,k);
-      segmentMatrix(matrices[offset+1],source[1],source[2],k,a);
-      // Skates keep their photographed shape; only bank slightly on the push.
-      const delta=source[3].clone().sub(source[2]);
-      const bank=-side*foot.bank*Math.cos(angle);
-      const toe=new THREE.Vector2(delta.x*Math.cos(bank)-delta.y*Math.sin(bank),delta.x*Math.sin(bank)+delta.y*Math.cos(bank)).add(a);
-      toe.y=0.03+foot.lift-0.96;
-      segmentMatrix(matrices[offset+2],source[2],source[3],a,toe);
-      state[name==='R'?'rightSoleHeight':'leftSoleHeight']=0.96+toe.y;
-      state.kneeBend=Math.max(state.kneeBend,Math.abs(knee.x-hip.x));
-    }
     for(const [chain,side,offset] of [[view.A,1,7],[view.B,-1,9]]) {
       if(!chain){matrices[offset].copy(matrices[0]);matrices[offset+1].copy(matrices[0]);continue;}
       const source=chain.map(point);
@@ -149,5 +131,5 @@ export function createPhotographicRig() {
     }
     return matrices;
   }
-  return {geometries,matrices,pose,state};
+  return {geometries,matrices,pose};
 }
