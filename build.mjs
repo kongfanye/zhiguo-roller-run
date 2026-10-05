@@ -23,3 +23,4 @@ console.log(`docs/index.html ${(html.length / 1024).toFixed(1)} KB (js ${(js.len
 cpSync('assets', 'docs/assets', {recursive:true});
 writeFileSync('docs/.nojekyll','');
 cpSync('THIRD-PARTY-NOTICES.md','docs/THIRD-PARTY-NOTICES.md');
+cpSync('MAKEHUMAN-ASSET-LICENSE.md','docs/MAKEHUMAN-ASSET-LICENSE.md');

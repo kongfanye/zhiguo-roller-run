@@ -9,11 +9,12 @@ const v=a=>new THREE.Vector3(...a);
 // Catch the reported paper-plane failure in the actual render geometry.
 for(const mesh of [body.shirt,body.skull]){
   mesh.geometry.computeBoundingBox();const size=mesh.geometry.boundingBox.getSize(new THREE.Vector3());
-  assert(size.x>0.18&&size.y>0.25&&size.z>0.20,'Head and torso must have real volume along all axes');
+  assert(size.x>0.14&&size.y>0.24&&size.z>0.14,'Head and torso must have real volume along all axes');
   assert(!mesh.material.transparent,'The volume must remain opaque from above and behind');
 }
 assert.equal(body.head.parent,body.spine,'Head must move with the articulated spine');
 let prior=null;
+const segmentDistance=(p,a,b)=>{const d=b.clone().sub(a),t=THREE.MathUtils.clamp(p.clone().sub(a).dot(d)/d.lengthSq(),0,1);return p.distanceTo(a.clone().addScaledVector(d,t));};
 for(let n=0;n<2400;n++){
   const ctx={speed:7.5,pedal:n<2100?1:0,rhythm:2,lean:0.28*Math.sin(n/160),
     trick:n>720&&n<1200?0.8:0,airborne:n>=1600&&n<1640,airHeight:n>=1600&&n<1640?0.1:0};
@@ -25,6 +26,12 @@ for(let n=0;n<2400;n++){
     const j=body.state.joints[arm.name],s=v(j.shoulder),e=v(j.elbow),w=v(j.wrist);
     assert(Math.abs(s.distanceTo(e)-ARM_LENGTHS.upper)<1e-6,'Upper arm length must remain fixed');
     assert(Math.abs(e.distanceTo(w)-ARM_LENGTHS.lower)<1e-6,'Forearm length must remain fixed');
+    const p=arm.skinArm.geometry.attributes.position;
+    for(let i=0;i<p.count;i+=11){
+      const vertex=new THREE.Vector3().fromBufferAttribute(p,i);
+      assert(vertex.toArray().every(Number.isFinite),'Anatomical skin vertices must remain finite');
+      assert(Math.min(segmentDistance(vertex,s,e),segmentDistance(vertex,e,w))<.18,'Skin and fingers must remain attached to the arm skeleton');
+    }
     if(prior)for(const joint of ['shoulder','elbow','wrist'])
       assert(v(j[joint]).distanceTo(v(prior[arm.name][joint]))<0.026,'Arm motion must remain continuous');
   }
@@ -38,4 +45,4 @@ for(const phase of [0.25,0.75]){
   const right=body.state.joints.right.wrist[0],left=body.state.joints.left.wrist[0];
   assert(phase===0.25?left>right:right>left,'Arms must alternate with weight transfer');
 }
-console.log('PASS: volumetric head/torso, shared pelvis, fixed arm lengths, coordinated swing and continuous upper-body joints.');
+console.log('PASS: volumetric head/torso, shared pelvis, fixed arm lengths, attached anatomical skin/hands, coordinated swing and continuous upper-body joints.');

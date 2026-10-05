@@ -22,9 +22,9 @@ export function createZhiguo() {
   const shadowMaterial=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false});
   const shadow=new THREE.Mesh(new THREE.PlaneGeometry(1.25,0.72),shadowMaterial);
   shadow.rotation.x=-Math.PI/2;shadow.position.y=0.022;root.add(shadow);
-  const ready=new THREE.TextureLoader().loadAsync('./assets/zhiguo-atlas-a.webp').then(texture=>{
+  const ready=new THREE.TextureLoader().loadAsync('./assets/zhiguo-face-v6.webp').then(texture=>{
     texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
-    texture.minFilter=THREE.LinearMipmapLinearFilter;upper.setAtlas(texture);
+    texture.minFilter=THREE.LinearMipmapLinearFilter;upper.setFaceTexture(texture);
     state.ready=true;upper.root.visible=legs.root.visible=true;
   }).catch(error=>{state.error='角色图片加载失败';throw error;});
   const cameraLocal=new THREE.Vector3();
