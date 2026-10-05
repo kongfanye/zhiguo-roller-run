@@ -5,7 +5,7 @@ export const LEG_LENGTHS = { thigh: 0.35, shin: 0.34 };
 const FLOOR = 0.03, WHEEL_RADIUS = 0.032, WHEEL_HALF_WIDTH = 0.010;
 
 // Real joint geometry: each segment rotates rigidly and keeps its length.
-// The photographic face/shirt is independent of these meshes.
+// The articulated upper body shares these hips and their pelvis rotation.
 export function createSkaterLegs() {
   const root = new THREE.Group(); root.name = 'anatomical-skating-legs';
   const skin = new THREE.MeshStandardMaterial({ color:'#d6a07c', roughness:0.82 });
@@ -63,6 +63,7 @@ export function createSkaterLegs() {
   function pose(motion,ctx={},dt=0) {
     const hipHeight=motion.hipHeight??0.935-motion.bodyDip;
     pelvis.position.set(-0.025,hipHeight+0.008,motion.shift);
+    const hipYaw=motion.pelvisYaw??0;pelvis.rotation.y=hipYaw;
     state.kneeBend=0;state.maxReachError=0;
     for(const leg of legs) {
       const {name,side,hip,knee,ankle,target,skate}=leg,foot=motion[name];
@@ -71,7 +72,7 @@ export function createSkaterLegs() {
       skate.rotation.set(bank,-side*(foot.toeAngle??0),0);
       skate.updateMatrix();
       target.set(-0.018,0.223,0).applyMatrix4(skate.matrix);
-      hip.set(-0.025,hipHeight,side*0.085+motion.shift);
+      hip.set(-0.025+Math.sin(hipYaw)*side*0.085,hipHeight,Math.cos(hipYaw)*side*0.085+motion.shift);
       solveTwoBone(hip,target,LEG_LENGTHS.thigh,LEG_LENGTHS.shin,pole,knee,ankle);
       state.maxReachError=Math.max(state.maxReachError,ankle.distanceTo(target));
       // Start the skin inside the shorts: coincident skin/fabric end caps at

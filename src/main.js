@@ -1314,12 +1314,12 @@ function frame(ts) {
 
   // 围巾：根部取脖子结的后侧
   if (settings.scarf) {
-    const kp = zhiguo.knot.position;
-    scarfA.set(kp.x - 0.07, kp.y + 0.025, 0.01);
-    scarfB.set(kp.x - 0.07, kp.y - 0.04, -0.01);
-    zhiguo.root.localToWorld(scarfA);
-    zhiguo.root.localToWorld(scarfB);
-    zhiguo.body.getWorldPosition(bodyW);
+    scarfA.set(-0.07, 0.025, 0.01);
+    scarfB.set(-0.07, -0.04, -0.01);
+    zhiguo.knot.localToWorld(scarfA);
+    zhiguo.knot.localToWorld(scarfB);
+    bodyW.set(0, 0.28, 0);
+    zhiguo.upper.spine.localToWorld(bodyW);
     windV.set(-S.speed + Math.sin(S.t * 0.7) * 0.8, S.airborne ? -S.vy * 0.6 : 0.3, -S.laneV * 0.8 + Math.sin(S.t * 0.4) * 0.6);
     if (dt > 0) scarf.update(dt, scarfA, scarfB, windV, S.t, collider);
   }

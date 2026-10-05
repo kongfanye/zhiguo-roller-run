@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict';
 import { createSkatingMotion, skateFoot } from '../src/skating-motion.js';
-import { createPhotographicRig } from '../src/zhiguo-rig.js';
 import { createSkaterLegs, LEG_LENGTHS } from '../src/skater-legs.js';
 import * as THREE from 'three';
 
 // Physical constraints, rather than comparing to an implementation snapshot.
-const rig=createPhotographicRig();
 const legs=createSkaterLegs();
 const motion=createSkatingMotion();
 const ctx={speed:7.5,pedal:1,rhythm:2,airborne:false,trick:0};
@@ -13,14 +11,10 @@ for (let n=0;n<1800;n++) {
   const gait=motion.update(1/120,ctx);
   legs.pose(gait,ctx,1/120);
   assert(gait.right.contact||gait.left.contact,'Ground skating must retain a supporting skate');
-  for(let view=0;view<8;view++) {
-    rig.pose(view,gait,ctx);
-    for(const matrix of rig.matrices) assert(matrix.elements.every(Number.isFinite),'Pose must remain finite in every view');
-    for(const side of ['right','left']) {
+  for(const side of ['right','left']) {
       const height=legs.state[side+'SoleHeight'];
       assert(height>=0.03-1e-6,'No skate may penetrate the road');
       if(gait[side].contact) assert(height<0.033,'A supporting skate must remain on the road');
-    }
   }
 }
 for (const phase of [0,0.42,0.72,0.94,1]) {
@@ -38,11 +32,7 @@ motion.update(1/60,{...ctx,airborne:true});
 assert(!motion.state.left.contact&&!motion.state.right.contact,'Jumping releases both ground contacts');
 motion.update(1/60,ctx);
 assert(motion.state.landing>0,'Landing must absorb the impact with a knee dip');
-for(const parts of rig.geometries) for(const geometry of parts) {
-  const weights=geometry.attributes.aWeight.array;
-  for(let i=0;i<weights.length;i+=4) assert(Math.abs(weights[i]+weights[i+1]+weights[i+2]+weights[i+3]-1)<1e-5,'Skinning weights must sum to one');
-}
-console.log('PASS: 8 views, 15 seconds of skating, ground support, stroke continuity, coasting, jump, landing and normalized skinning.');
+console.log('PASS: 15 seconds of skating, ground support, stroke continuity, coasting, jump and landing.');
 
 // These catch the visible failure that the earlier finite-value/height tests
 // missed: anatomical lengths, forward knees, actual wheel contact and jumps

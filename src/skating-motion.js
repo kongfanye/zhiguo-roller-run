@@ -28,7 +28,7 @@ export function skateFoot(phase, width, activity = 1) {
 export function createSkatingMotion() {
   const state = { phase: 0, activity: 0, crouch: 0.035, landing: 0, landingTime: 10, wasAirborne: false, balanceReady: false, balanceAmount: 0,
     right: skateFoot(0, 0), left: skateFoot(0.5, 0), mode: 'glide', supportFoot: 'right', cadenceSpm: 0,
-    shift: 0, armSwing: 0, bodyDip: 0.035, hipHeight: 0.90 };
+    shift: 0, armSwing: 0, bodyDip: 0.035, hipHeight: 0.90, pelvisYaw: 0 };
   function update(dt, ctx) {
     const speed = ctx.speed ?? 0;
     const air = !!ctx.airborne;
@@ -52,6 +52,7 @@ export function createSkatingMotion() {
     const weight = Math.sin(state.phase * TAU) * state.activity;
     state.shift = 0.072 * weight + clamp(ctx.lean??0,-0.28,0.28)*0.12;
     state.armSwing = 0.11 * weight;
+    state.pelvisYaw = 0.040 * weight;
     const extension = Math.max(state.right.out,state.left.out)/Math.max(width,0.01);
     state.bodyDip = state.crouch + 0.008 * (1 - Math.cos(state.phase * TAU * 2)) * state.activity
       + 0.035 * extension * extension + 0.045 * state.landing;
@@ -74,6 +75,7 @@ export function createSkatingMotion() {
       state.left.contact = false; state.supportFoot = 'right';
       state.mode = 'balance'; state.cadenceSpm = 0;
       state.armSwing *= 1 - balance;
+      state.pelvisYaw *= 1 - balance;
       state.shift = mix(state.shift, 0.10, balance);
       state.right.fore *= 1 - balance; state.left.fore = mix(state.left.fore, -0.07, balance);
       state.right.bank *= 1 - balance; state.right.toeAngle *= 1 - balance;
