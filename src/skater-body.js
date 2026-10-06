@@ -15,6 +15,17 @@ function armFrame(start,end,q){
   frameZ.crossVectors(frameX,frameY).normalize();
   q.setFromRotationMatrix(frameMatrix.makeBasis(frameX,frameY,frameZ));
 }
+function mirrorArmBindPose(data){
+  // The imported arm uses the opposite handedness to the game's +X-forward,
+  // +Z-right skeleton. Reflect the whole bind mesh across its longitudinal
+  // plane so the wrist blend stays continuous and both thumbs point forward.
+  // A reflection reverses winding; reverse each triangle to retain outward normals.
+  const reflect=values=>values.map((value,i)=>i%3===0?-value:value);
+  const indices=data.indices.slice();
+  for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
+  return {...data,upper:reflect(data.upper),lower:reflect(data.lower),indices,
+    palmNormal:reflect(data.palmNormal),fingers:data.fingers.map(chain=>chain.map(reflect))};
+}
 // A loose, open short-sleeve overshirt, measured against the real photos.
 const profiles=[[0,.113,.104,.154],[.08,.111,.102,.156],[.19,.104,.087,.148],[.30,.115,.092,.155],[.39,.107,.084,.162],[.445,.082,.072,.164],[.49,.052,.048,.078],[.52,.044,.043,.046]];
 const profileCurve=new THREE.CatmullRomCurve3(profiles.map(([y,f,b,w])=>new THREE.Vector3(f,b,w)),false,'catmullrom',0.4);
@@ -93,7 +104,7 @@ export function createSkaterBody(){
   const leaf=ellipsoid(spine,gold,[.118,.248,0],[.0015,.018,.0055]);leaf.rotation.x=.32;
   const knot=new THREE.Object3D();knot.position.set(-.035,.526,0);spine.add(knot);
   const arms=[1,-1].map((side,i)=>{
-    const data=ANATOMY.arms[i],g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(data.weight.length*3),3));g.setIndex(data.indices);
+    const data=mirrorArmBindPose(ANATOMY.arms[i]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(data.weight.length*3),3));g.setIndex(data.indices);
     const skinArm=mesh(g,skin);skinArm.name=(i?'left':'right')+'-continuous-arm-and-hand';skinArm.frustumCulled=false;g.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const upper=new THREE.Object3D(),lower=new THREE.Object3D(),hand=new THREE.Object3D();spine.add(upper,lower,hand);
     const sleeveProfile=[[0,0],[.037,0],[.049,.14],[.056,.38],[.057,.80],[.056,1]].map(([r,y])=>new THREE.Vector2(r,y));
@@ -105,7 +116,7 @@ export function createSkaterBody(){
   batchStaticMeshes(head,new Set([skull,...head.children.filter(n=>n.material===faceMat)]),hitMeshes);
   batchStaticMeshes(spine,new Set([shirt,tee,...arms.flatMap(a=>[a.sleeve,a.skinArm])]),hitMeshes);
   const a=new THREE.Vector3(),b=new THREE.Vector3(),h=new THREE.Vector3();
-  const state={joints:{},hands:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:11,faceSource:'restored-v4-portrait'};
+  const state={joints:{},hands:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:12,faceSource:'restored-v4-portrait'};
   function pose(motion,ctx={},dt=0){
     root.position.set(-.025,motion.hipHeight,motion.shift);root.rotation.y=motion.pelvisYaw??0;
     const weight=Math.sin(motion.phase*TAU)*(motion.activity??0),forward=.07+clamp((ctx.speed??0)/15,0,1)*.07;

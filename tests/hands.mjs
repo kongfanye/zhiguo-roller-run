@@ -26,7 +26,17 @@ for(let n=0;n<720;n++){
   for(let i=0;i<body.arms.length;i++){
     const arm=body.arms[i],p=arm.skinArm.geometry.attributes.position,hand=body.state.hands[arm.name];
     assert.equal(hand.fingers.length,5);assert(Math.abs(hand.wristFlex)<.15&&Math.abs(hand.wristTwist)<.25,'Skating must keep wrists close to neutral');
-    if(gait.balanceAmount<.1)assert(hand.palmNormal[2]*arm.side<-.6,'Palms must face the thighs during normal skating');
+    if(gait.balanceAmount<.1){
+      assert(hand.palmNormal[2]*arm.side<-.6,'Palms must face the thighs during normal skating');
+      const index=v.fromArray(hand.fingers[1][0]),little=w.fromArray(hand.fingers[4][0]);
+      assert(index.x>little.x,'The thumb/index side must face forward, not backward, on both hands');
+    }
+    // Check actual left/right anatomy even when balancing or airborne: looking
+    // down the fingers, the thumb and palm must have opposite chirality per side.
+    const down=new THREE.Vector3().fromArray(hand.fingers[2][0]).sub(arm.wrist);
+    const thumb=new THREE.Vector3().fromArray(hand.fingers[0][0]).sub(new THREE.Vector3().fromArray(hand.fingers[4][0]));
+    const chirality=new THREE.Vector3().fromArray(hand.palmNormal).dot(down.cross(thumb));
+    assert(chirality*arm.side<-.004,'Right and left hands must have the correct anatomical chirality');
     for(let f=0;f<5;f++)for(let j=0;j<3;j++){
       const expected=v.fromArray(arm.data.fingers[f][j]).distanceTo(w.fromArray(arm.data.fingers[f][j+1]));
       const actual=v.fromArray(hand.fingers[f][j]).distanceTo(w.fromArray(hand.fingers[f][j+1]));
@@ -41,4 +51,4 @@ for(let n=0;n<720;n++){
   if(prior)for(let i=0;i<points.length;i++){const step=points[i].distanceTo(prior[i]);if(step>maxStep){maxStep=step;maxFrame=n;}}prior=points;
 }
 assert(maxStrain<.025,'The actual hand mesh must not stretch or collapse');assert(maxStep<.05,`Hand vertices must stay below 3 m/s at 60 Hz: ${maxStep} at frame ${maxFrame}`);
-console.log(`PASS: complete five-finger meshes, inward neutral palms, fixed finger lengths, ${maxStrain.toFixed(5)} maximum hand strain and ${(maxStep*1000).toFixed(2)} mm/frame continuity.`);
+console.log(`PASS: correct left/right anatomy and forward thumbs, complete five-finger meshes, inward neutral palms, fixed finger lengths, ${maxStrain.toFixed(5)} maximum hand strain and ${(maxStep*1000).toFixed(2)} mm/frame continuity.`);
