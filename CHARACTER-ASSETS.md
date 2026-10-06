@@ -1,8 +1,22 @@
-# 第九版人物素材
+# 人物与封面素材
+
+## 真人封面与作者头像（2026-10-06）
+
+首页封面改用用户提供的真人轮滑照片提取人物，文件为 `assets/zhiguo-cover-photo-v10.png`。使用内置 imagegen 编辑生成透明抠图，保留本人五官、衣着与轮滑鞋；去除背景及其他人物，原照片被遮挡的手臂和手部由编辑补全。首页照片仅用于封面，游戏内仍使用第九版三维人物和轮滑动作。
+
+作者头像 `assets/kongfanye-avatar.jpg` 是用户提供的红衣小男孩原图，未使用生成工具修改。封面显示“游戏作者：kongfanye”并链接到作者 GitHub。两张图片内嵌在游戏 HTML 中，独立文件和手机网页均可加载。
+
+内置 imagegen 最终提示词：
+
+```text
+Use case: background-extraction. Asset type: transparent photograph cutout for a web game's cover. Edit target: the attached indoor skating photo. Extract ONLY the tall adult woman standing in the CENTER of the photo, wearing round glasses, two brown braids, open blue/beige plaid short-sleeve shirt over a light T-shirt, dark shorts, tall white socks and black/red inline roller skates. She is smiling and looking slightly downward. Remove ALL background, the child in the pink helmet, other people, the little pasted duplicate figures, clouds, doodles and all objects. Preserve the adult woman's exact photographed face, glasses, smile, hair, proportions, visible skin pixels, clothing and skate details, and her original pose. This must remain a faithful photographic cutout of the same actual woman, not a drawing, render, beauty retouch or a newly invented person. Only reconstruct the small parts of her arm/hand/clothing obscured by the child, consistent with the original pose. Center her complete body with both roller skates visible, tightly framed in a tall portrait image, small transparent margin. Genuine alpha transparency everywhere outside her silhouette; no floor, no shadow, no text, no white or checkerboard background.
+```
+
+## 第九版人物素材
 
 本版只修改发型与发色。发型参考用户提供的 `296ff0e8951bce2cf749336926849908.jpg`，项目保存原照副本为 `assets/zhiguo-hair-reference-v9.jpg`。形态为中分、胸前与肩背长度的自然披发，带轻微波浪、不齐的发尾和红棕色。
 
-`src/zhiguo-hair.js` 创建闭合的后脑发层与有厚度的两侧发束，头顶沿现有头部曲面连续衔接，细发丝补充边缘。披发通过解析阻尼弹簧跟随动作，并与现有胸背轮廓避让。`assets/zhiguo-front-v9.webp` 为本版真实三维渲染，作为游戏首页缩略图。
+`src/zhiguo-hair.js` 创建闭合的后脑发层与有厚度的两侧发束，头顶沿现有头部曲面连续衔接，细发丝补充边缘。披发通过解析阻尼弹簧跟随动作，并与现有胸背轮廓避让。`assets/zhiguo-front-v9.webp` 为第九版真实三维渲染，保留供对照；当前首页使用真人照片抠图。
 
 面部网格顶点、法线、索引、照片材质投影与光照、头部位置均保持第八版原样。`tests/hair.mjs` 对这些数据及原照片做 SHA-256 比对，并检查转弯、平衡和跳跃时发束连续运动。人体、衣服与原有轮滑动作也保持原样。
 

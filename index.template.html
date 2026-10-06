@@ -4,7 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>指锅快跑 · Zhiguo on Skates</title>
-<meta name="game-version" content="20261006-motion9" />
+<meta name="game-version" content="20261006-cover10" />
+<meta name="author" content="kongfanye" />
 <meta name="description" content="指锅快跑：指锅穿上轮滑鞋，沿着实时 3D 海岸线滑行、跳跃、做特技，收集小鱼。" />
 <meta property="og:title" content="指锅快跑 · Zhiguo on Skates" />
 <meta property="og:description" content="和指锅一起滑轮滑，追逐海风和小鱼。" />
@@ -63,6 +64,7 @@ button:disabled { cursor: wait; opacity: 0.55; }
 .intro-links a { color: var(--muted); text-decoration: none; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; transition: color 0.15s; }
 .intro-links a:hover { color: #fff; }
 .intro-links svg { width: 14px; height: 14px; fill: currentColor; }
+.author-avatar { width: 34px; height: 34px; flex: 0 0 34px; object-fit: cover; border-radius: 50%; border: 1px solid rgba(255,255,255,0.32); }
 kbd { display: inline-block; min-width: 22px; padding: 1px 6px; margin: 0 2px; border-radius: 6px; font: 600 11.5px/18px ui-monospace, Menlo, monospace; text-align: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-bottom-width: 2px; color: #fff; }
 
 /* ---------- HUD ---------- */
@@ -214,7 +216,7 @@ body.cinematic.started .dash, body.cinematic.started .score, body.cinematic.star
 
 <section id="intro">
   <div class="intro-card">
-    <img class="intro-art" src="./assets/zhiguo-front.webp" alt="指锅戴圆框眼镜、梳双辫子，穿格子衬衫和轮滑鞋微笑着滑行" />
+    <img class="intro-art" src="./assets/zhiguo-cover-photo-v10.png" alt="真人指锅：戴眼镜、梳双辫，穿格子衬衫和轮滑鞋微笑" />
     <h1>指锅快跑</h1>
     <p class="sub">穿上轮滑鞋，和指锅一起沿着海岸线追鱼。<br />自由滑行，跳跃，迎着海风做个特技。</p>
     <div class="chips"><span class="chip">海岸轮滑</span><span class="chip">抓鱼小游戏</span><span class="chip">昼夜循环</span><span class="chip">五种镜头</span></div>
@@ -228,7 +230,7 @@ body.cinematic.started .dash, body.cinematic.started .score, body.cinematic.star
       <kbd>B</kbd> 按铃　<kbd>H</kbd> 指锅加油　<kbd>C</kbd> 切换镜头　<kbd>N</kbd> 快进 3 小时　点击指锅加油，点击海面看鱼跃出
     </div>
     <div class="intro-links">
-      <a href="https://github.com/riba2534/claude-opus-5-5-demo" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>原游戏作者 · riba2534</a>
+      <a class="author-link" href="https://github.com/kongfanye" target="_blank" rel="noopener noreferrer"><img class="author-avatar" src="./assets/kongfanye-avatar.jpg" alt="kongfanye 的红衣小男孩头像" /><span>游戏作者：kongfanye</span></a>
       
     </div>
   </div>
@@ -250,7 +252,7 @@ body.cinematic.started .dash, body.cinematic.started .score, body.cinematic.star
     <button class="icon-btn" data-act="full" title="全屏 (F)">⛶</button>
     <button class="icon-btn" data-act="gui" title="参数面板">⚙️</button>
     <button class="icon-btn" data-act="help" title="帮助">？</button>
-    <a class="icon-btn" href="https://github.com/riba2534/claude-opus-5-5-demo" target="_blank" rel="noopener noreferrer" title="原游戏源码" aria-label="GitHub 源码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+    <a class="icon-btn" href="https://github.com/kongfanye/zhiguo-roller-run" target="_blank" rel="noopener noreferrer" title="指锅快跑源码" aria-label="GitHub 源码"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
     
   </div>
   <div id="fps" class="panel" hidden></div>

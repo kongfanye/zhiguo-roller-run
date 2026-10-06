@@ -18,7 +18,9 @@ let js = res.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 let html = readFileSync('index.template.html', 'utf8');
 const og = process.env.OG_IMAGE ? `<meta property="og:image" content="${process.env.OG_IMAGE}" />` : '';
 html = html.replace('<!--OG_IMAGE-->', og).replace('/*APP_JS*/', () => js);
-html=html.replace('src="./assets/zhiguo-front.webp"','src="data:image/webp;base64,'+readFileSync('assets/zhiguo-front-v9.webp').toString('base64')+'"');
+for (const [asset, mime] of [['zhiguo-cover-photo-v10.png', 'image/png'], ['kongfanye-avatar.jpg', 'image/jpeg']]) {
+  html=html.replace(`src="./assets/${asset}"`, `src="data:${mime};base64,${readFileSync('assets/'+asset).toString('base64')}"`);
+}
 mkdirSync('docs', { recursive: true });
 writeFileSync('docs/index.html', html);
 console.log(`docs/index.html ${(html.length / 1024).toFixed(1)} KB (js ${(js.length / 1024).toFixed(1)} KB)`);
