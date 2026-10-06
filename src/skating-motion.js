@@ -17,7 +17,7 @@ export function skateFoot(phase, width, activity = 1) {
     const q = (phase - 0.72) / 0.22;
     out = width * (1 - smooth(q));
     fore = mix(-0.145, 0.045, smooth(q));
-    lift = Math.sin(Math.PI * q) ** 2 * 0.065; stage = 'recover';
+    lift = Math.sin(Math.PI * smooth(q)) ** 2 * 0.058; stage = 'recover';
   } else stage = 'set-down';
   lift *= activity;
   return { phase, out: out * activity, fore: fore * activity, lift, stage,
@@ -28,7 +28,7 @@ export function skateFoot(phase, width, activity = 1) {
 export function createSkatingMotion() {
   const state = { phase: 0, activity: 0, crouch: 0.035, landing: 0, landingTime: 10, wasAirborne: false, balanceReady: false, balanceAmount: 0,
     right: skateFoot(0, 0), left: skateFoot(0.5, 0), mode: 'glide', supportFoot: 'right', cadenceSpm: 0,
-    shift: 0, armSwing: 0, bodyDip: 0.035, hipHeight: 0.90, pelvisYaw: 0 };
+    shift: 0, armSwing: 0, bodyDip: 0.035, hipHeight: 0.90, pelvisYaw: 0, strokeWidth: .175, airTuck: 0 };
   function update(dt, ctx) {
     const speed = ctx.speed ?? 0;
     const air = !!ctx.airborne;
@@ -42,7 +42,8 @@ export function createSkatingMotion() {
     state.landingTime+=dt;
     const impact=state.landingTime/0.10;
     state.landing=impact<10?impact*Math.exp(1-impact):0;
-    const width = clamp(0.145 + speed * 0.004, 0.145, 0.215);
+    state.strokeWidth=mix(state.strokeWidth,clamp(0.145+speed*0.004,0.145,0.215),1-Math.exp(-6*dt));
+    const width=state.strokeWidth;
     state.right = skateFoot(state.phase, width, state.activity);
     state.left = skateFoot(state.phase + 0.5, width, state.activity);
     state.supportFoot = state.phase < 0.5 ? 'right' : 'left';
@@ -56,9 +57,10 @@ export function createSkatingMotion() {
     const extension = Math.max(state.right.out,state.left.out)/Math.max(width,0.01);
     state.bodyDip = state.crouch + 0.008 * (1 - Math.cos(state.phase * TAU * 2)) * state.activity
       + 0.035 * extension * extension + 0.045 * state.landing;
+    state.airTuck=air?(ctx.airHeight===undefined?1:smooth((ctx.airHeight??0)/.22)):0;
     if (air) for (const foot of [state.right, state.left]) {
       // Tuck follows jump height, so take-off and landing do not snap the feet.
-      const tuck = ctx.airHeight === undefined ? 1 : smooth((ctx.airHeight ?? 0) / 0.22);
+      const tuck = state.airTuck;
       foot.out *= 1 - tuck; foot.fore *= 1 - tuck;
       foot.lift *= 1 - tuck; foot.lift += 0.065 * tuck;
       foot.contact = false; foot.bank *= 1 - tuck; foot.toeAngle *= 1 - tuck;
@@ -81,6 +83,7 @@ export function createSkatingMotion() {
       state.right.bank *= 1 - balance; state.right.toeAngle *= 1 - balance;
     }
     state.hipHeight = 0.935 - state.bodyDip;
+    if(!air&&state.mode!=='balance')state.supportFoot=state.right.contact&&!state.left.contact?'right':state.left.contact&&!state.right.contact?'left':state.supportFoot;
     return state;
   }
   return { state, update };

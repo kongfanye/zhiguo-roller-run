@@ -6,10 +6,10 @@ import { createSkaterBody } from './skater-body.js';
 const DIRECTIONS=['正面','右前方','右侧面','右后方','背面','左后方','左侧面','左前方'];
 const TAU=Math.PI*2;
 
-export function createZhiguo() {
+export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-identity-v8.jpg':__ZHIGUO_FACE_URL__}={}) {
   const root=new THREE.Group();root.name='zhiguo-articulated-3d-skater';
   const upper=createSkaterBody(),legs=createSkaterLegs(),motion=createSkatingMotion();
-  root.add(upper.root,legs.root);upper.root.visible=legs.root.visible=false;
+  root.add(upper.root,legs.root);
   const state={ready:false,error:null,direction:0,directionLabel:DIRECTIONS[0],phase:0,cheer:0,collect:0};
   // Preserve the game's anchor/debug interfaces; every anchor is now attached
   // to a real body joint and all geometry has camera-independent orientation.
@@ -22,11 +22,11 @@ export function createZhiguo() {
   const shadowMaterial=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false});
   const shadow=new THREE.Mesh(new THREE.PlaneGeometry(1.25,0.72),shadowMaterial);
   shadow.rotation.x=-Math.PI/2;shadow.position.y=0.022;root.add(shadow);
-  const ready=new THREE.TextureLoader().loadAsync('./assets/zhiguo-face-v6.webp').then(texture=>{
-    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
+  const ready=new THREE.TextureLoader().loadAsync(faceUrl).then(texture=>{
+    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
     texture.minFilter=THREE.LinearMipmapLinearFilter;upper.setFaceTexture(texture);
     state.ready=true;upper.root.visible=legs.root.visible=true;
-  }).catch(error=>{state.error='角色图片加载失败';throw error;});
+  }).catch(()=>{state.error='面部贴图未加载，正在显示基础三维形象';state.ready=true;});
   const cameraLocal=new THREE.Vector3();
   function orient(camera,hide=false) {
     if(camera){
@@ -35,7 +35,7 @@ export function createZhiguo() {
       state.direction=Math.round(angle/TAU*8)%8;state.directionLabel=DIRECTIONS[state.direction];
     }
     // No billboard rotation, geometry switch, flattening or camera-facing mesh.
-    upper.root.visible=legs.root.visible=state.ready&&!hide;
+    upper.root.visible=legs.root.visible=!hide;
   }
   function update(dt,ctx) {
     const gait=motion.update(dt,ctx);legs.pose(gait,ctx,dt);upper.pose(gait,ctx,dt);
@@ -44,6 +44,6 @@ export function createZhiguo() {
     shadow.scale.setScalar(ctx.airborne?0.65:1);shadowMaterial.opacity=ctx.airborne?0.4:0.85;
   }
   return {root,body,head,knot,mouth,state,rig,legs,upper,update,orient,ready,
-    hitMeshes:[...upper.hitMeshes,...legs.legs.flatMap(l=>[l.thigh,l.shin,l.skate])],
+    hitMeshes:[...upper.hitMeshes,...legs.hitMeshes],
     honk(){state.cheer=1;},gulp(){state.collect=0.4;}};
 }

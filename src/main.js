@@ -28,7 +28,7 @@ const DPR = window.devicePixelRatio || 1;
 const QUALITY = {
   low: { name: '流畅', pr: Math.min(DPR, 1) * 0.8, shadow: 1024, bloom: false, msaa: 0, density: 0.5 },
   medium: { name: '均衡', pr: Math.min(DPR, 1.25), shadow: 2048, bloom: true, msaa: 2, density: 0.8 },
-  high: { name: '精美', pr: Math.min(DPR, 1.75), shadow: 2048, bloom: true, msaa: 4, density: 1 },
+  high: { name: '精美', pr: Math.min(Math.max(DPR, 1.25), 1.75), shadow: 2048, bloom: true, msaa: 4, density: 1 },
   ultra: { name: '极致', pr: Math.min(DPR, 2.25), shadow: 4096, bloom: true, msaa: 4, density: 1.25 },
 };
 let qualityKey = qp('q', isTouch ? 'medium' : 'high');
@@ -181,7 +181,7 @@ const colorGrade = {
     tDiffuse: { value: null },
     uVignette: { value: 0.28 },
     uAberration: { value: 0 },
-    uGrain: { value: 0.035 },
+    uGrain: { value: 0.012 },
     uTime: { value: 0 },
     uWarm: { value: 0 },
   },
@@ -520,7 +520,7 @@ function updateLighting(dt) {
     bloom.strength = pal.bloom * settings.bloomBoost * lerp(1, 0.7, night);
     bloom.threshold = lerp(1.05, 0.88, night);
   }
-  fillLight.intensity = night * 2.2;
+  fillLight.intensity = .15 + night * 4.8;
   gradePass.uniforms.uWarm.value = smoothstep(25, 3, elev) * (1 - night) * 0.8;
   // 环境贴图节流刷新
   if (Math.abs(hour - envHour) > 0.18 || envHour < 0) {
@@ -1347,7 +1347,7 @@ function frame(ts) {
   world.ffMat.uniforms.uScale.value = scale;
 
   gradePass.uniforms.uTime.value = S.t;
-  gradePass.uniforms.uAberration.value = clamp((S.speed - 9) / 6, 0, 1) * 0.012 + (S.airborne ? 0.004 : 0);
+  gradePass.uniforms.uAberration.value = clamp((S.speed - 9) / 6, 0, 1) * 0.0015;
 
   audio.update({ speed: S.speed, pedaling: S.pedaling, night: info.night, cadence: S.cadence, airborne: S.airborne });
   updateHud(dt, info);

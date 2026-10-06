@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { solveTwoBone, placeBetween, unitCylinder } from './util.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {batchStaticMeshes} from './mesh-batching.js';
 
 export const LEG_LENGTHS = { thigh: 0.35, shin: 0.34 };
 const FLOOR = 0.03, WHEEL_RADIUS = 0.032, WHEEL_HALF_WIDTH = 0.010;
@@ -8,7 +10,8 @@ const FLOOR = 0.03, WHEEL_RADIUS = 0.032, WHEEL_HALF_WIDTH = 0.010;
 // The articulated upper body shares these hips and their pelvis rotation.
 export function createSkaterLegs() {
   const root = new THREE.Group(); root.name = 'anatomical-skating-legs';
-  const skin = new THREE.MeshStandardMaterial({ color:'#d6a07c', roughness:0.82 });
+  const hitMeshes=[];
+  const skin = new THREE.MeshStandardMaterial({ color:'#c19072', roughness:0.82 });
   const shorts = new THREE.MeshStandardMaterial({ color:'#1c2230', roughness:0.94 });
   const bootMat = new THREE.MeshStandardMaterial({ color:'#191c25', roughness:0.56 });
   const strapMat = new THREE.MeshStandardMaterial({ color:'#363948', roughness:0.72 });
@@ -23,29 +26,37 @@ export function createSkaterLegs() {
   const sockTex=new THREE.DataTexture(pixels,32,32);sockTex.colorSpace=THREE.SRGBColorSpace;sockTex.needsUpdate=true;
   const sockMat=new THREE.MeshStandardMaterial({color:'#f6f4ed',map:sockTex,roughness:1});
   function mesh(geometry,material,parent=root) {
-    const m=new THREE.Mesh(geometry,material);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
+    const m=new THREE.Mesh(geometry,material);m.castShadow=true;m.receiveShadow=true;parent.add(m);hitMeshes.push(m);return m;
   }
   const sphere=new THREE.SphereGeometry(1,24,16);
   function ellipsoid(parent,mat,position,scale) {
     const m=mesh(sphere,mat,parent);m.position.set(...position);m.scale.set(...scale);return m;
   }
   const pelvis=mesh(new THREE.CylinderGeometry(0.133,0.124,0.13,28),shorts);
-  pelvis.scale.x=0.77;
+  pelvis.scale.x=0.62;
   const pole=new THREE.Vector3(1,0,0);
   const legs=['right','left'].map((name,i)=>{
     const side=i===0?1:-1;
-    const thigh=mesh(unitCylinder(0.065,0.046,24),skin);
+    const thighProfile=[[0,0],[.062,0],[.065,.18],[.060,.42],[.050,.78],[.046,1]].map(([r,y])=>new THREE.Vector2(r,y));
+    const thigh=mesh(new THREE.LatheGeometry(thighProfile,32),skin);
     const shinProfile=[[0.044,0],[0.048,0.12],[0.049,0.28],[0.043,0.55],[0.034,0.86],[0.032,1]].map(([r,y])=>new THREE.Vector2(r,y));
     const shin=mesh(new THREE.LatheGeometry(shinProfile,24),skin);
     const kneeMesh=ellipsoid(root,skin,[0,0,0],[0.047,0.047,0.047]);
     const cuff=mesh(unitCylinder(0.076,0.07,24),shorts);
     const sock=mesh(unitCylinder(0.035,0.039,24),sockMat);
     const skate=new THREE.Group();skate.name=`${name}-inline-skate`;skate.rotation.order='YXZ';root.add(skate);
-    ellipsoid(skate,bootMat,[0.014,0.137,0],[0.137,0.063,0.061]);
-    ellipsoid(skate,bootMat,[-0.026,0.189,0],[0.06,0.065,0.061]);
+    ellipsoid(skate,bootMat,[0.014,0.137,0],[0.127,0.055,0.055]);
+    ellipsoid(skate,bootMat,[-0.026,0.189,0],[0.06,0.065,0.057]);
     ellipsoid(skate,strapMat,[-0.022,0.212,0],[0.062,0.015,0.064]);
     ellipsoid(skate,red,[0.02,0.164,0],[0.075,0.009,0.063]);
-    const sole=mesh(new THREE.BoxGeometry(0.245,0.02,0.111),strapMat,skate);sole.position.set(0.02,0.090,0);
+    // Buckles and crossed laces make the black/red boots readable in side views.
+    const buckle=mesh(new THREE.BoxGeometry(.024,.017,.012),red,skate);buckle.position.set(-.017,.215,side*.064);
+    const strap=mesh(new THREE.BoxGeometry(.036,.012,.112),strapMat,skate);strap.position.set(.013,.187,0);strap.rotation.z=-.12;
+    for(let n=0;n<4;n++)for(const s of [1,-1]){
+      const start=new THREE.Vector3(.026+n*.016,.193-n*.007,s*.027),end=new THREE.Vector3(.040+n*.016,.190-n*.007,-s*.027);
+      const lace=mesh(unitCylinder(.0015,.0015,6),metal,skate);placeBetween(lace,start,end);
+    }
+    const sole=mesh(new RoundedBoxGeometry(0.245,0.018,0.105,3,.007),strapMat,skate);sole.position.set(0.012,0.090,0);
     const frame=mesh(new THREE.BoxGeometry(0.225,0.021,0.035),metal,skate);frame.position.set(0.012,0.072,0);
     const wheels=[];
     for(const x of [-0.101,-0.034,0.034,0.102]) {
@@ -55,6 +66,7 @@ export function createSkaterLegs() {
       const hub=mesh(new THREE.CylinderGeometry(0.014,0.014,0.023,16),metal,axle);hub.rotation.x=Math.PI/2;
       wheels.push(axle);
     }
+    batchStaticMeshes(skate,new Set(),hitMeshes);
     return {name,side,thigh,shin,kneeMesh,cuff,sock,skate,wheels,
       hip:new THREE.Vector3(),knee:new THREE.Vector3(),ankle:new THREE.Vector3(),target:new THREE.Vector3(),
       cuffEnd:new THREE.Vector3(),skinStart:new THREE.Vector3(),sockTop:new THREE.Vector3()};
@@ -91,5 +103,5 @@ export function createSkaterLegs() {
     }
     return state;
   }
-  return {root,legs,state,pose};
+  return {root,legs,state,pose,hitMeshes};
 }

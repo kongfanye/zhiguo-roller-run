@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>指锅快跑 · Zhiguo on Skates</title>
-<meta name="game-version" content="20261005-motion6" />
+<meta name="game-version" content="20261006-motion9" />
 <meta name="description" content="指锅快跑：指锅穿上轮滑鞋，沿着实时 3D 海岸线滑行、跳跃、做特技，收集小鱼。" />
 <meta property="og:title" content="指锅快跑 · Zhiguo on Skates" />
 <meta property="og:description" content="和指锅一起滑轮滑，追逐海风和小鱼。" />
@@ -110,7 +110,8 @@ body.hide-ui .hud, body.hide-ui .hud * { opacity: 0 !important; visibility: hidd
 .hints { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom)); padding: 8px 14px; font-size: 12px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 560px); }
 .hints span { white-space: nowrap; }
 #fps { position: absolute; top: 72px; right: 18px; font: 11px ui-monospace, Menlo, monospace; color: var(--muted); padding: 4px 8px; }
-#toasts { position: fixed; top: 118px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; z-index: 30; pointer-events: none; }
+#toasts { position: fixed; top: 82px; left: 18px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 280px; z-index: 30; pointer-events: none; }
+#toasts .toast:not(:last-child) { display: none; }
 .toast { display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 12px; border-radius: 14px; background: var(--glass-strong); border: 1px solid rgba(255, 210, 122, 0.35); box-shadow: var(--shadow); backdrop-filter: blur(12px); transform: translateY(-14px) scale(0.96); opacity: 0; transition: all 0.45s cubic-bezier(.2,1.4,.4,1); }
 .toast.in { transform: none; opacity: 1; }
 .toast .emo { font-size: 24px; }
@@ -168,6 +169,11 @@ body.cinematic.started .dash, body.cinematic.started .score, body.cinematic.star
   #help ul { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
+  #toasts { top: 122px; left: 16px; right: 16px; max-width: none; }
+  .toast { padding: 7px 11px; gap: 8px; border-radius: 10px; }
+  .toast .emo { font-size: 18px; }
+  .toast b { font-size: 12px; }
+  .toast small { display: block; max-width: calc(100vw - 90px); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .brand > div { display: none; }
   .dash { padding: 8px 10px 8px 8px; gap: 8px; }
   .stats { display: none; }
