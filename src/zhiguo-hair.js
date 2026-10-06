@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU=Math.PI*2,smooth=THREE.MathUtils.smoothstep;
 const HAIR_COLOR=[65,36,27]; // Muted auburn, with warm red-brown highlights.
-function fiberTexture(){
+export function fiberTexture(){
   const size=256,data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
     const wave=.75*Math.sin(y*.036),strand=Math.sin(x*1.37+wave)+.4*Math.sin(x*3.07+y*.012);
@@ -39,7 +39,7 @@ function lockGeometry(points,width,depth,phase=0,rows=44,sides=8,axis=[0,0,1],wa
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;
 }
 
-function scalpGeometry(skull){
+export function scalpGeometry(skull){
   const source=skull.geometry,positions=source.attributes.position,normals=source.attributes.normal,p=[],n=[],uv=[];
   const boundary=v=>{
     const front=smooth(v.x,.010,.075),part=.069+.013*Math.exp(-((v.z/.018)**2));

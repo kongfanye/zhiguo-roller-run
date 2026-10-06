@@ -2,7 +2,7 @@ import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
 
 const minify = !process.argv.includes('--dev');
-const define={__ZHIGUO_FACE_URL__:JSON.stringify('data:image/jpeg;base64,'+readFileSync('assets/zhiguo-identity-v8.jpg').toString('base64'))};
+const define={__ZHIGUO_FACE_URL__:JSON.stringify('data:image/webp;base64,'+readFileSync('assets/zhiguo-front.webp').toString('base64'))};
 const res = await build({
   entryPoints: ['src/main.js'],
   bundle: true,

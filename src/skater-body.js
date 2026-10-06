@@ -5,7 +5,16 @@ import {batchStaticMeshes} from './mesh-batching.js';
 import {createIdentityHead} from './zhiguo-identity.js';
 
 export const ARM_LENGTHS={upper:0.235,lower:0.225};
-const clamp=THREE.MathUtils.clamp,TAU=Math.PI*2,Y=new THREE.Vector3(0,1,0);
+const clamp=THREE.MathUtils.clamp,TAU=Math.PI*2,Y=new THREE.Vector3(0,1,0),Z=new THREE.Vector3(0,0,1);
+const frameX=new THREE.Vector3(),frameY=new THREE.Vector3(),frameZ=new THREE.Vector3(),frameMatrix=new THREE.Matrix4();
+function armFrame(start,end,q){
+  frameY.subVectors(end,start).normalize();
+  // Orient the anatomical bind frame with palms toward the thighs. A stable
+  // frame also prevents the 180-degree roll caused by shortest-arc Y rotations.
+  frameX.set(-1,0,0).addScaledVector(frameY,frameY.x).normalize();
+  frameZ.crossVectors(frameX,frameY).normalize();
+  q.setFromRotationMatrix(frameMatrix.makeBasis(frameX,frameY,frameZ));
+}
 // A loose, open short-sleeve overshirt, measured against the real photos.
 const profiles=[[0,.113,.104,.154],[.08,.111,.102,.156],[.19,.104,.087,.148],[.30,.115,.092,.155],[.39,.107,.084,.162],[.445,.082,.072,.164],[.49,.052,.048,.078],[.52,.044,.043,.046]];
 const profileCurve=new THREE.CatmullRomCurve3(profiles.map(([y,f,b,w])=>new THREE.Vector3(f,b,w)),false,'catmullrom',0.4);
@@ -91,12 +100,12 @@ export function createSkaterBody(){
     const sleeve=mesh(new THREE.LatheGeometry(sleeveProfile,32),fabric);
     return {side,name:i?'left':'right',upper,lower,hand,sleeve,skinArm,data,
       shoulder:new THREE.Vector3(),elbow:new THREE.Vector3(),wrist:new THREE.Vector3(),target:new THREE.Vector3(),pole:new THREE.Vector3(),
-      sleeveStart:new THREE.Vector3(),sleeveEnd:new THREE.Vector3(),qu:new THREE.Quaternion(),ql:new THREE.Quaternion()};
+      sleeveStart:new THREE.Vector3(),sleeveEnd:new THREE.Vector3(),qu:new THREE.Quaternion(),ql:new THREE.Quaternion(),qh:new THREE.Quaternion(),wristRest:new THREE.Quaternion().setFromAxisAngle(Y,side*.10).multiply(new THREE.Quaternion().setFromAxisAngle(Z,.055))};
   });
   batchStaticMeshes(head,new Set([skull,...head.children.filter(n=>n.material===faceMat)]),hitMeshes);
   batchStaticMeshes(spine,new Set([shirt,tee,...arms.flatMap(a=>[a.sleeve,a.skinArm])]),hitMeshes);
-  const a=new THREE.Vector3(),b=new THREE.Vector3();
-  const state={joints:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:9,faceSource:'original-user-photograph'};
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),h=new THREE.Vector3();
+  const state={joints:{},hands:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:11,faceSource:'restored-v4-portrait'};
   function pose(motion,ctx={},dt=0){
     root.position.set(-.025,motion.hipHeight,motion.shift);root.rotation.y=motion.pelvisYaw??0;
     const weight=Math.sin(motion.phase*TAU)*(motion.activity??0),forward=.07+clamp((ctx.speed??0)/15,0,1)*.07;
@@ -104,22 +113,24 @@ export function createSkaterBody(){
     state.jumpArmBlend=THREE.MathUtils.lerp(state.jumpArmBlend,motion.airTuck??0,1-Math.exp(-9*dt));
     spine.rotation.set(lateral,-weight*.055,-forward);head.rotation.set(-lateral*.35,weight*.028,forward*.4);
     for(const arm of arms){
-      const {side,shoulder,elbow,wrist,target,pole,qu,ql,data}=arm;
+      const {side,shoulder,elbow,wrist,target,pole,qu,ql,qh,data}=arm;
       shoulder.set(-.002,.433,side*.160);
       const balance=motion.balanceAmount??0,tuck=state.jumpArmBlend;
-      target.set(.065-side*weight*.085,.058+Math.abs(weight)*.020+balance*.13+tuck*.08,side*(.208+balance*.13));pole.set(-.35,-1,side*.18);
+      target.set(.065-side*weight*.085,.058+Math.abs(weight)*.020+balance*.13+tuck*.08,side*(.225+balance*.13));pole.set(-.35,-1,side*.18);
       solveTwoBone(shoulder,target,ARM_LENGTHS.upper,ARM_LENGTHS.lower,pole,elbow,wrist);
-      qu.setFromUnitVectors(Y,a.copy(elbow).sub(shoulder).normalize());ql.setFromUnitVectors(Y,b.copy(wrist).sub(elbow).normalize());
-      arm.upper.position.copy(shoulder);arm.upper.quaternion.copy(qu);arm.lower.position.copy(elbow);arm.lower.quaternion.copy(ql);arm.hand.position.copy(wrist);arm.hand.quaternion.copy(ql);
+      armFrame(shoulder,elbow,qu);armFrame(elbow,wrist,ql);qh.copy(ql).multiply(arm.wristRest);
+      arm.upper.position.copy(shoulder);arm.upper.quaternion.copy(qu);arm.lower.position.copy(elbow);arm.lower.quaternion.copy(ql);arm.hand.position.copy(wrist);arm.hand.quaternion.copy(qh);
       const p=arm.skinArm.geometry.attributes.position;
       for(let n=0;n<data.weight.length;n++){
         a.fromArray(data.upper,n*3).applyQuaternion(qu).add(shoulder);b.fromArray(data.lower,n*3).applyQuaternion(ql).add(elbow);
-        a.lerp(b,data.weight[n]);p.setXYZ(n,a.x,a.y,a.z);
+        h.fromArray(data.lower,n*3);h.y-=ARM_LENGTHS.lower;h.applyQuaternion(qh).add(wrist);
+        a.lerp(b,data.weight[n]).lerp(h,data.handWeight[n]);p.setXYZ(n,a.x,a.y,a.z);
       }
       p.needsUpdate=true;arm.skinArm.geometry.computeVertexNormals();
       arm.sleeveStart.copy(shoulder);arm.sleeveStart.y+=.008;
       arm.sleeveEnd.copy(shoulder).lerp(elbow,.60);placeBetween(arm.sleeve,arm.sleeveStart,arm.sleeveEnd);
       state.joints[arm.name]={shoulder:shoulder.toArray(),elbow:elbow.toArray(),wrist:wrist.toArray()};
+      state.hands[arm.name]={wristFlex:.055,wristTwist:side*.10,palmNormal:h.fromArray(data.palmNormal).applyQuaternion(qh).toArray(),fingers:data.fingers.map(chain=>chain.map(point=>{h.fromArray(point);h.y-=ARM_LENGTHS.lower;return h.applyQuaternion(qh).add(wrist).toArray();}))};
     }
     hair.pose({weight,lateral,airTuck:motion.airTuck??0},dt,profile);
     state.pelvisPosition=root.position.toArray();state.pelvisYaw=root.rotation.y;state.spineRotation=spine.rotation.toArray().slice(0,3);state.poseVersion++;root.updateMatrixWorld(true);return state;

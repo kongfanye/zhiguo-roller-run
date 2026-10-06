@@ -14,7 +14,7 @@ button{border:1px solid #d4dfe5;border-radius:8px;background:#fff;padding:10px;f
 .modes{display:flex;flex-wrap:wrap;gap:7px}.modes button{flex:1;min-width:65px}.range{display:flex;align-items:center;gap:12px}input[type=range]{accent-color:var(--accent);width:100%}output{font-size:12px;font-variant-numeric:tabular-nums;min-width:35px}
 .check{display:flex;align-items:center;gap:8px;font-size:12px;margin:14px 0}.check input{accent-color:var(--accent)}
 #toggle{width:100%;margin-top:16px;padding:12px;font-weight:600;background:#243e4b;color:white;border-color:#243e4b}.note{margin-top:28px;font-size:11px;color:var(--muted);line-height:1.9}
-.reference{margin-top:20px}.reference summary{cursor:pointer;font-size:12px;font-weight:650}.reference-photo{height:205px;position:relative;overflow:hidden;border-radius:8px;background:#dce5df;margin-top:10px}.reference-photo img{position:absolute;width:480%;max-width:none;left:50%;top:0;transform:translate(-47.2%,-21.4%)}.reference-caption{margin-top:7px;font-size:11px;color:var(--muted)}
+.reference{margin-top:20px}.reference summary{cursor:pointer;font-size:12px;font-weight:650}.reference-photo{height:205px;position:relative;overflow:hidden;border-radius:8px;background:#dce5df;margin-top:10px}.reference-photo img{display:block;width:100%;height:100%;object-fit:contain}.reference-caption{margin-top:7px;font-size:11px;color:var(--muted)}
 .viewer{position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 55% 45%,#f3f7f9,#e1ebf0)}#stage{position:absolute;inset:0}canvas{display:block;touch-action:none}
 .topline{position:absolute;inset:25px 28px auto;display:flex;justify-content:space-between;gap:14px;pointer-events:none}.badge{font-size:11px;letter-spacing:.04em;color:#69808e}.badge::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#479d88;margin-right:8px}
 .frame-label{position:absolute;left:28px;bottom:34px;pointer-events:none}#viewLabel{font-size:23px;font-weight:500}.caption{margin-top:5px;font-size:12px;color:#708591}
@@ -25,15 +25,15 @@ button{border:1px solid #d4dfe5;border-radius:8px;background:#fff;padding:10px;f
 <body>
 <main class="layout">
 <aside>
-<div class="eyebrow">ZHIGUO / CHARACTER STUDY 09</div><h1>指锅 · 三维人物</h1><p>中分披发 · 自然红棕发色。<br>旋转查看，观察完整轮滑动作。</p>
-<details class="reference" open><summary>本人照片对照</summary><div class="reference-photo"><img id="referenceImage" alt="用户提供的指锅本人照片"></div><div class="reference-caption">对照眼形、眼镜和笑容</div></details>
+<div class="eyebrow">ZHIGUO / CHARACTER STUDY 11</div><h1>指锅 · 三维人物</h1><p>中分双辫 · 旧版微笑和眼镜。<br>旋转查看手部与完整轮滑动作。</p>
+<details class="reference" open><summary>图三对应的旧版形象</summary><div class="reference-photo"><img id="referenceImage" alt="图三对应的旧版指锅形象"></div><div class="reference-caption">对照眼形、笑容与双辫发型</div></details>
 <div class="section"><span class="label">观察方向</span><div class="views" id="views">
 <button data-view="0">正面</button><button data-view="1" class="active">右前方</button><button data-view="2">右侧面</button><button data-view="3">右后方</button><button data-view="4">背面</button><button data-view="5">左后方</button><button data-view="6">左侧面</button><button data-view="7">左前方</button>
 </div></div>
 <div class="section"><span class="label">取景范围</span><div class="modes" id="framing"><button data-frame="full" class="active">全身</button><button data-frame="upper">上半身</button><button data-frame="face">面部</button><button data-frame="top">俯视</button></div></div>
 <div class="section motion"><span class="label">动作预览</span><div class="modes" id="motion"><button data-motion="stride" class="active">轮滑</button><button data-motion="coast">滑行</button><button data-motion="balance">平衡</button><button data-motion="jump">跳跃</button></div><div class="range"><input id="rate" type="range" min=".25" max="1.5" value="1" step=".05" aria-label="动画播放速度"><output id="rateValue">1.00×</output></div></div>
 <label class="check"><input id="rotate" type="checkbox">自动环绕</label><button id="toggle">暂停动作</button>
-<div class="note">拖拽旋转 · 滚轮缩放<br>中分微卷长发 / 红棕发色 / 细框眼镜<br>保留原有面部，发束随动作轻微摆动。<div id="error" role="status"></div></div>
+<div class="note">拖拽旋转 · 滚轮缩放<br>中分双辫 / 自然放松的手掌 / 完整五指<br>恢复旧版脸部素材，辫子随动作轻微摆动。<div id="error" role="status"></div></div>
 </aside>
 <section class="viewer" aria-label="可旋转的三维人物预览"><div id="stage"></div><div class="topline"><span class="badge">实时三维 · 自由观察</span><span class="badge" id="status">正在载入</span></div><div class="frame-label"><div id="viewLabel">右前方</div><div class="caption" id="motionLabel">侧后蹬地 → 低抬脚收回 → 落地承重</div></div><div class="footer">八方向参考 · 连续动作<br><span id="fps"></span></div></section>
 </main>

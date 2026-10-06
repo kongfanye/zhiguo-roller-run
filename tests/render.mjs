@@ -4,7 +4,7 @@ import {readFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
 import assert from 'node:assert/strict';
 
-const root=resolve('docs'),output=resolve('../character-v9-checks');mkdirSync(output,{recursive:true});
+const root=resolve('docs'),output=resolve('../character-v11-checks');mkdirSync(output,{recursive:true});
 const server=createServer((req,res)=>{
   if(req.url==='/favicon.ico'){res.writeHead(204);res.end();return;}
   const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
@@ -17,8 +17,8 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1024},deviceScaleFactor:1});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(url+'/character.html');await page.waitForFunction(()=>window.__characterPreview?.character.state.ready);await page.waitForTimeout(900);
-  assert.deepEqual(await page.evaluate(()=>{const p=window.__characterPreview,t=p.character.upper.skull.material.userData.identityUniforms.uIdentity.value;return [p.character.upper.state.faceSource,t.image.naturalWidth,t.image.naturalHeight];}),['original-user-photograph',1440,960],'Use the original identity photo in the actual 3D face material');
-  await page.waitForFunction(()=>document.querySelector('#referenceImage').naturalWidth===1440);
+  assert.deepEqual(await page.evaluate(()=>{const p=window.__characterPreview,t=p.character.upper.skull.material.userData.identityUniforms.uIdentity.value;return [p.character.upper.state.faceSource,t.image.naturalWidth,t.image.naturalHeight];}),['restored-v4-portrait',480,560],'Restore the selected legacy portrait in the actual 3D face material');
+  await page.waitForFunction(()=>document.querySelector('#referenceImage').naturalWidth===480);
   await page.evaluate(()=>{const p=window.__characterPreview;p.state.paused=true;});
   await page.screenshot({path:output+'/studio.png'});
   const frozenMatrices=await page.evaluate(()=>{const p=window.__characterPreview;p.character.root.updateMatrixWorld(true);return p.character.upper.head.matrixWorld.toArray();});

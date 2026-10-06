@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node tests/gait.mjs && node tests/body.mjs && node tests/continuity.mjs && node tests/hair.mjs",
+    "test": "node tests/gait.mjs && node tests/body.mjs && node tests/continuity.mjs && node tests/hair.mjs && node tests/hands.mjs",
     "test:render": "node tests/render.mjs"
   },
   "keywords": [],
