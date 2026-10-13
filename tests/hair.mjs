@@ -5,7 +5,9 @@ import {createSkatingMotion} from '../src/skating-motion.js';
 import {IDENTITY_PHOTO} from '../src/zhiguo-identity.js';
 
 const body=createSkaterBody(),g=body.skull.geometry;
-assert.equal(IDENTITY_PHOTO.asset,'zhiguo-front.webp','Restore the exact portrait chosen in the user\'s third reference');
+assert.equal(IDENTITY_PHOTO.asset,'zhiguo-face-photo-v13.webp','Use the face texture built from the user\'s original high-resolution photo');
+// The old portrait gave the face about 315 px per meter; the photo texture must stay sharp.
+assert(IDENTITY_PHOTO.pxPerMeter>=2000,'The face texture must keep enough pixels to avoid a blurred, distorted face');
 const seams=new Map();
 for(let i=0;i<g.attributes.position.count;i++){
   const p=new THREE.Vector3().fromBufferAttribute(g.attributes.position,i);
@@ -28,4 +30,4 @@ for(let i=0;i<480;i++){
   if(prior)for(let n=0;n<points.length;n++)maxStep=Math.max(maxStep,points[n].distanceTo(prior[n]));prior=points;
 }
 assert(maxStep<.015,'Braids and ties must move continuously without sudden jumps');
-console.log(`PASS: restored portrait, seamless face normals, two volumetric braids, and continuous braid motion (${(maxStep*1000).toFixed(2)} mm/frame).`);
+console.log(`PASS: high-resolution photo face, seamless face normals, two volumetric braids, and continuous braid motion (${(maxStep*1000).toFixed(2)} mm/frame).`);

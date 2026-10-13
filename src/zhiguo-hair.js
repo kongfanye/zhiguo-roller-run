@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU=Math.PI*2,smooth=THREE.MathUtils.smoothstep;
-const HAIR_COLOR=[65,36,27]; // Muted auburn, with warm red-brown highlights.
+const HAIR_COLOR=[74,47,35]; // Warm chestnut brown sampled from the reference photos.
 export function fiberTexture(){
   const size=256,data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
@@ -39,12 +39,12 @@ function lockGeometry(points,width,depth,phase=0,rows=44,sides=8,axis=[0,0,1],wa
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;
 }
 
-export function scalpGeometry(skull){
+// boundary(vertex) >= 0 where the scalp is covered by hair.
+export function scalpGeometry(skull,boundary=v=>{
+  const front=smooth(v.x,.010,.075),part=.069+.013*Math.exp(-((v.z/.018)**2));
+  return v.y-THREE.MathUtils.lerp(-.119,part-.073*smooth(Math.abs(v.z),.037,.083),front);
+}){
   const source=skull.geometry,positions=source.attributes.position,normals=source.attributes.normal,p=[],n=[],uv=[];
-  const boundary=v=>{
-    const front=smooth(v.x,.010,.075),part=.069+.013*Math.exp(-((v.z/.018)**2));
-    return v.y-THREE.MathUtils.lerp(-.119,part-.073*smooth(Math.abs(v.z),.037,.083),front);
-  };
   for(let i=0;i<source.index.count;i+=3){
     const poly=[0,1,2].map(j=>{const k=source.index.getX(i+j);return {p:new THREE.Vector3().fromBufferAttribute(positions,k),n:new THREE.Vector3().fromBufferAttribute(normals,k)};});
     if(poly.some(v=>Math.abs(v.p.z)>.087))continue;

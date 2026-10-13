@@ -17,8 +17,8 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1024},deviceScaleFactor:1});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(url+'/character.html');await page.waitForFunction(()=>window.__characterPreview?.character.state.ready);await page.waitForTimeout(900);
-  assert.deepEqual(await page.evaluate(()=>{const p=window.__characterPreview,t=p.character.upper.skull.material.userData.identityUniforms.uIdentity.value;return [p.character.upper.state.faceSource,t.image.naturalWidth,t.image.naturalHeight];}),['restored-v4-portrait',480,560],'Restore the selected legacy portrait in the actual 3D face material');
-  await page.waitForFunction(()=>document.querySelector('#referenceImage').naturalWidth===480);
+  assert.deepEqual(await page.evaluate(()=>{const p=window.__characterPreview,t=p.character.upper.skull.material.userData.identityUniforms.uIdentity.value;return [p.character.upper.state.faceSource,t.image.naturalWidth,t.image.naturalHeight];}),['original-photo-v13',552,816],'Use the high-resolution photo face texture in the actual 3D face material');
+  await page.waitForFunction(()=>document.querySelector('#referenceImage').naturalWidth===552);
   await page.evaluate(()=>{const p=window.__characterPreview;p.state.paused=true;});
   await page.screenshot({path:output+'/studio.png'});
   const frozenMatrices=await page.evaluate(()=>{const p=window.__characterPreview;p.character.root.updateMatrixWorld(true);return p.character.upper.head.matrixWorld.toArray();});
