@@ -7,8 +7,11 @@ The user supplied five real photographs and an eight-view character sheet. The s
 **Face.** `assets/zhiguo-face-photo-v13.webp` (552 × 816, RGBA) is built by `tests/make-face-texture.py` from `assets/zhiguo-identity-v8.jpg`, the unmodified copy of the user's frontal photograph. That photo's landmarks fit the existing head at one uniform scale of 875 px/m: pupils at y 321.6, mouth 389, chin 435, and lens centers 68 px apart. The texture is resampled at 3× that scale with a 5% shear for the slight head tilt. The earlier portrait gave the face about 315 px/m and was warped row by row; the new texture has about eight times the pixel density and needs no warping. Retouching is limited:
 
 - Removed the photographed wire rims, bridge and nose pads, which the 3D rims replace.
-- Smoothed loose strands from the bare forehead.
-- Mirrored the hair-covered outer left cheek and temple from the clear right side. The eyes, brows, nose and smile are untouched.
+- Smoothed loose strands from the bare forehead and brow area.
+- Mirrored the hair-covered outer left cheek and temple from the clear right side. The eyes, nose and smile are untouched.
+- Lifted thin dark lines narrower than about 4 mm (stray hairs, sharp creases and rim traces) back to the surrounding skin with a per-channel morphological closing. On the 3D face these lines read as scars; broad shading such as the smile folds stays.
+- Painted soft arched brows just above the 3D rims. Her real brows are thin and sit on the photographed top rims, which were removed.
+- Sharpened only the eyes and smile.
 - Evened out the golden-hour light and matched the color to the reference skin tone `#d4a088`, which is also the 3D skin color.
 
 A feathered alpha fades out beneath the 3D hairline and toward the jaw. No generative model was used.
