@@ -6,11 +6,11 @@ Game by kongfanye. The cover uses a cutout from the user's real photograph of Zh
 
 Lace up your skates and catch fish along a 3D coast. Play on desktop or mobile, with five camera modes, day and night, sound effects, jumps and a one-foot balance trick.
 
-The entire character uses 3D meshes and joints. Version 11 restored the glasses, smile and center-parted twin braids from the earlier appearance selected by the user. It reuses the earlier front portrait, adjusts the jaw proportions and removes the lighting seam down the face. Missing fingertips were restored; each finger bends around its own joints into a relaxed pose, the palm retains its volume, and the wrist blends continuously into the forearm. Version 12 mirrors the hand bindings so the thumbs point forward when the palms face the body. Clothing consists of an open beige-and-blue plaid short-sleeve shirt, a gray undershirt, dark shorts, white socks and black-and-red inline skates. The side profile, ears and back of the head are approximate models rather than a scan.
+The entire character uses 3D meshes and joints. Version 13 rebuilds her from the user's real photos and eight-view reference sheet. The face comes from the user's original high-resolution frontal photograph, about eight times sharper than the earlier portrait, with one uniform projection rather than a row-by-row warp. Thin gold 3D wire glasses are traced over her real geometric frames. The center-parted hair sweeps back from a soft, shaded hairline over the temples and covers the ears. It gathers into two plaits behind the ears that hang forward over the shoulders. Clothing follows the reference sheet: a buttoned blue-and-lavender plaid short-sleeve shirt with a pointed collar and a green flower pendant, loose navy denim shorts, thick white socks, and black skates with a pink floral print, hinged cuffs and large cream wheels. Each finger bends around its own joints, and the thumbs point forward when the palms face the body (version 12). The side profile and back of the head are approximate models rather than a scan.
 
 The existing skeleton and skating motion remain: alternate sideways pushes, recovery and weight transfer, with continuous arm and braid movement and smooth transitions between gliding, jumping, landing and balancing. The face texture is embedded in the HTML, so it also loads when the file is opened directly. All eight viewing angles use the same 3D model; the camera never changes the character's shape. See [MOTION-REFERENCES.md](MOTION-REFERENCES.md) for movement notes, [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution, and [CHARACTER-ASSETS.md](CHARACTER-ASSETS.md) for face and cover assets.
 
-`docs/character.html` is a standalone 3D character preview with the selected earlier reference. It supports eight directions, face and upper-body framing, a top view, drag-to-orbit, slow playback, pause, and skating/gliding/balancing/jumping. It shares the game's model and animation code and opens directly in a browser.
+`docs/character.html` is a standalone 3D character preview showing the photo face texture. It supports eight directions, face and upper-body framing, a top view, drag-to-orbit, slow playback, pause, and skating/gliding/balancing/jumping. It shares the game's model and animation code and opens directly in a browser.
 
 ## Play
 
@@ -33,9 +33,9 @@ See GitHub's [publishing-source documentation](https://docs.github.com/en/pages/
 
 ## Edit and rebuild
 
-Run `npm ci` to install dependencies. `npm test` checks motion constraints, joint continuity at 30/60/120 Hz, braid movement, face seams, hand completeness and deformation. `npm run build` updates the game and character preview. `npm run test:render` uses the installed Edge browser to verify eight directions, mobile rendering, motion controls and direct HTML loading; set `EDGE_PATH` to use another Chromium executable. Commit and push both the source and `docs` output to redeploy Pages.
+Run `npm ci` to install dependencies. `npm test` checks motion constraints, joint continuity at 30/60/120 Hz, braid movement, face texture resolution and seams, hand completeness and deformation. `python3 tests/make-face-texture.py` regenerates the face texture from the original photo (requires Pillow and numpy). `npm run build` updates the game and character preview. `npm run test:render` uses the installed Edge browser to verify eight directions, mobile rendering, motion controls and direct HTML loading; set `EDGE_PATH` to use another Chromium executable. Commit and push both the source and `docs` output to redeploy Pages.
 
-The published interface, runtime messages, code comments, test captions and project documentation are in English. The English release uses the version 12 character.
+The published interface, runtime messages, code comments, test captions and project documentation are in English. The English release uses the version 13 character.
 
 ## Original game
 

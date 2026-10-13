@@ -1,5 +1,32 @@
 # Character and cover assets
 
+## Version 13: real-photo face and eight-view reference outfit (2026-10-13)
+
+The user supplied five real photographs and an eight-view character sheet. The sheet matches `assets/zhiguo-atlas-a.webp`.
+
+**Face.** `assets/zhiguo-face-photo-v13.webp` (552 × 816, RGBA) is built by `tests/make-face-texture.py` from `assets/zhiguo-identity-v8.jpg`, the unmodified copy of the user's frontal photograph. That photo's landmarks fit the existing head at one uniform scale of 875 px/m: pupils at y 321.6, mouth 389, chin 435, and lens centers 68 px apart. The texture is resampled at 3× that scale with a 5% shear for the slight head tilt. The earlier portrait gave the face about 315 px/m and was warped row by row; the new texture has about eight times the pixel density and needs no warping. Retouching is limited:
+
+- Removed the photographed wire rims, bridge and nose pads, which the 3D rims replace.
+- Smoothed loose strands from the bare forehead.
+- Mirrored the hair-covered outer left cheek and temple from the clear right side. The eyes, brows, nose and smile are untouched.
+- Evened out the golden-hour light and matched the color to the reference skin tone `#d4a088`, which is also the 3D skin color.
+
+A feathered alpha fades out beneath the 3D hairline and toward the jaw. No generative model was used.
+
+**Glasses.** `src/zhiguo-identity.js` traces thin gold wire rims over the measured lenses (photo rims x 625–679 / 695–745, y 305–354). The geometric frames are squarer above the lens centers and rounder below. Temple arms run back into the hair.
+
+**Hair.** `src/zhiguo-braids.js` builds 30 swept locks per side from the center part. Ray-casting places each lock on the head surface, so the locks converge on the plait roots behind each ear. The scalp follows the photo's measured forehead arch, a sideburn edge, then the nape, so hair frames the face without covering the cheeks. A soft contact shadow under the hairline seats the hair on the skin. The ear meshes were removed because the reference hair covers them in every view. Each plait has three strands following offset figure-eight paths. Collisions move whole rings of a plait over the shoulder without flattening it.
+
+**Clothing and skates.** These follow the eight-view sheet:
+
+- A buttoned blue/lavender/white madras plaid shirt with a pointed collar, placket, buttons, curved shirt-tail hem and turned-up short sleeves.
+- A green four-petal flower pendant on a fine chain.
+- Loose navy denim shorts with tan topstitching.
+- Thick white crew socks.
+- Black skates with a pink floral print, an instep strap with a red buckle, laces, a hinged cuff that pivots with the shin, slim frame rails and four large cream wheels.
+
+The relaxed arm pose keeps the hands away from the hips.
+
 ## Version 12: mirrored hand bindings (2026-10-06)
 
 The hand meshes and game skeleton now use matching anatomical sides. In `src/skater-body.js`, binding coordinates are mirrored across the arm's longitudinal plane, triangle winding is reversed and normals are recalculated. Arms, wrists and all five fingers are mirrored together to preserve continuous wrist skinning. When the palms face the body, the thumbs and index fingers are on the forward side. `tests/hands.mjs` checks hand anatomy and thumb direction in skating, balance and jump poses.
