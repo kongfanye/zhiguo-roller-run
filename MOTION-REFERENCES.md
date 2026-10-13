@@ -1,20 +1,24 @@
-# 人物与轮滑动作（2026-10-06，第九版）
+# Character and skating motion
 
-参考轮滑教练 Asha Kirkby 的 Skatefresh 教学：
+The motion design follows inline-skating instruction from Asha Kirkby of Skatefresh:
 
-- [蹬地、支撑与收腿](https://skatefresh.com/how-to-get-a-more-powerful-skating-stride/)
-- [中级速滑姿态重点](https://skatefresh.com/wp-content/uploads/2020/08/Speed-Eng-Intermediate-Focus-Points.pdf)
+- [Push, support and recovery](https://skatefresh.com/how-to-get-a-more-powerful-skating-stride/)
+- [Intermediate speed-skating posture](https://skatefresh.com/wp-content/uploads/2020/08/Speed-Eng-Intermediate-Focus-Points.pdf)
 
-本次依据用户的新照片把头发改为红棕色中分披发，保持第八版面部与已经验证的人体骨架、骨长和轮滑动作。所有视角共用同一套立体几何与关节，镜头不会改变身体姿态或压扁上身。
+Versions 11 and 12 use the earlier front portrait and center-parted twin braids selected by the user. The existing skeleton, bone lengths and skating motion are retained. Every view shares the same volumetric geometry and joints; camera changes never alter the pose or flatten the upper body. The version 9 loose-hair implementation remains in the source as an earlier asset variant.
 
-`src/skating-motion.js` 控制「支撑滑行 → 向侧后方蹬地 → 低抬脚收回 → 落地换脚」。位置过渡使用端点速度为零的五次曲线，左右交替，回收脚最高抬起约 5.8 厘米，抬脚也使用五次缓动以保持衔接处的速度连续。步幅随速度平滑变化；手臂自然下垂并随承重换脚摆动。停止蹬地时平滑收敛为滑行；跳跃收腿幅度跟随跳跃高度，手臂收起使用独立的平滑过渡；落地缓冲先下压再恢复；单脚特技等待支撑脚自然落地，再逐渐抬起另一只脚，退出时也渐变。披发使用解析阻尼弹簧跟随动作，在现有胸背轮廓之外平滑摆动。
+`src/skating-motion.js` drives support and glide → sideways/backward push → low recovery → landing and weight transfer. Positions use quintic curves with zero endpoint velocity, alternating left and right. The recovering foot rises approximately 5.8 cm, with quintic easing to keep velocity continuous. Stride length changes smoothly with speed; relaxed arms counter-swing with weight transfer. Stopping the push smoothly settles into gliding. Jump tuck follows jump height, while arm tuck uses a separate smooth transition. Landing compresses the pose before recovery. A one-foot trick waits for the support skate to land, gradually lifts the other foot, and blends back out. Hair follows the body continuously: the current twin braids use the braid system, while the earlier loose hair uses a damped spring and avoids the chest and back.
 
-`src/skater-legs.js` 用三维两段 IK 计算髋、膝、踝。大腿与小腿长度固定为 0.35、0.34 个游戏世界单位，膝盖始终朝前弯曲。各段网格独立刚性旋转，轮滑鞋与踝关节连接；四个轮子留有间距，随速度滚动。侧面与背面也显示同一套三维腿部，不受八方向贴图切换影响。转弯时调整髋与上身，地面上的脚轮接触平面保持水平。
+`src/skater-legs.js` solves hip, knee and ankle positions with two-bone 3D inverse kinematics. Thigh and shin lengths remain fixed at 0.35 and 0.34 game-world units, with forward-bending knees. Each mesh segment rotates rigidly, and the skates stay attached to the ankles. Four spaced wheels rotate with speed. Side and rear views render the same 3D legs rather than changing directional images. Turns adjust the hips and upper body while grounded wheels maintain a horizontal contact plane.
 
-`src/zhiguo-identity.js` 使用本人原照片进行固定投影，以照片中发际线、眼睛、鼻子、笑容和下巴的像素位置校准。连续的头颈曲面替换通用模型的深眼窝与口腔结构，避免这些开口遮掉原照片五官；耳部保留人体网格，披发、镜腿和耳饰采用三维结构。材质保留部分照片原有光照，并响应场景照明，减少对照片阴影的重复加深。镜框正面轮廓来自原照片，避免额外镜框与照片重复。
+`src/zhiguo-identity.js` calibrates the current portrait's facial proportions and texture mapping on a continuous 3D head and neck. The selected earlier portrait supplies the eyes, glasses and smile. Forehead-to-jaw seams are welded to prevent a visible lighting split. Earlier version 8 projected the original photograph using hairline, eye, nose, smile and chin landmarks; that source photo remains available for comparison. The continuous head surface avoids generic eye-socket and mouth openings obscuring the photographed features. Ears, glasses arms and earrings are three-dimensional. The front glasses come from the portrait, avoiding duplicate frames.
 
-`src/skater-body.js` 保留人体手臂与手部网格，衬衫采用开襟、翻领、柔软衣摆和米蓝格子，配灰色内搭与长项链。肩袖完整覆盖皮肤，颈部与衣领衔接；后腰与短裤保留运动时的间隙。头发沿现有头顶曲面延伸为闭合的肩背发层，两侧发束有厚度并轻微弯曲。手臂用两段 IK 驱动连续皮肤网格，肘部混合两段变换，手指保持放松形状。上身与两侧髋关节共用腰胯位置及小幅转动，脊柱随承重脚侧倾并保持前倾，肩膀与手臂配合换脚反向摆动。`src/zhiguo.js` 统一驱动上身与腿部，将头部和嘴部锚点连接到实际关节。
+`src/skater-body.js` retains anatomical arm and hand meshes. The open plaid shirt has folded collars, a flexible hem and beige-and-blue fabric, with a gray undershirt and long necklace. Sleeves cover the shoulder skin, the neckline meets the collar, and the rear hem clears the shorts during movement. Two-bone IK drives continuous arm skin, blending the elbow between segments. Each finger has a relaxed joint-based pose. Version 12 mirrors the hand binding coordinates and reverses triangle winding so the thumbs have the correct anatomical direction. The upper body and both hip joints share pelvis position and small rotations. The spine leans forward and shifts toward the support foot; shoulders and arms counter-swing with each step. `src/zhiguo.js` coordinates body and leg updates and attaches head and mouth anchors to the actual joints.
 
-`src/mesh-batching.js` 仅合并同一关节下的固定附件，不合并可活动的手臂、腿部和滚动的轮子。游戏减少颗粒噪点与高速色散，并增加夜间补光，帮助保持人物轮廓和格纹清晰。实际帧率取决于设备。
+`src/mesh-batching.js` merges only fixed attachments within the same joint. Moving arms, legs and rolling wheels remain separate. Reduced grain and high-speed chromatic effects, plus nighttime fill lighting, help preserve the character outline and plaid detail. Frame rate depends on the device.
 
-验证：第九版增加第八版面部网格、法线、索引、投影材质与原照片的哈希比对，以及披发在转弯、平衡和跳跃中的运动连续性检查。`npm test` 检查头部与胸背的三个维度、腰胯连接、手臂骨长与摆动连续性、人体皮肤和手指保持连接，以及四档速度下的腿部骨长、膝盖方向、鞋踝连接、实际轮子不穿地与支撑接触、滑行停止步频、转弯和单脚特技过渡。新增 30/60/120 Hz 下 12 秒的真实跳跃高度、落地、滑行停止和恢复、转弯及平衡动作序列，检查世界坐标中关节移动的连续性和跨刷新率的一致性。浏览器检查八个水平方向、面部/上半身/俯视取景、电脑与手机画面、跳跃落地、动作切换与特技，以及无需服务器直接打开人物 HTML。固定动作时旋转镜头，检查头部世界矩阵不变，防止重新引入照片平面随镜头转向的问题。
+## Validation
+
+`npm test` checks head and torso volume, pelvis attachment, arm lengths and swing continuity, connected skin and fingers, face seams and material identity, braid movement, and anatomical hand direction. It also checks leg lengths at four speeds, forward knee bends, skate-to-ankle attachment, wheel penetration and support contact, cadence when gliding, turn transitions and one-foot tricks. Twelve-second sequences at 30/60/120 Hz cover real jump heights, landing, stopping and restarting, turns and balance, checking world-space joint continuity and consistency across refresh rates.
+
+Browser checks cover eight horizontal views, face/upper-body/top framing, desktop and mobile layouts, jump and landing, motion switches, balance tricks and opening the character HTML without a server. With animation frozen, camera rotation must leave the head's world matrix unchanged, preventing a camera-facing photo plane from replacing the 3D head.

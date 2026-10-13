@@ -50,7 +50,7 @@ function materials() {
   };
 }
 
-// 身体：变形球体 + 胸口淡黄
+// Body: deformed sphere with a pale yellow chest
 function bodyGeometry() {
   const g = new THREE.SphereGeometry(1, 56, 36);
   const p = g.attributes.position;
@@ -88,7 +88,7 @@ function featherShape(len, width) {
   s.quadraticCurveTo(len * 0.9, -width * 0.42, len * 0.5, -width * 0.5);
   s.quadraticCurveTo(len * 0.12, -width * 0.55, 0, 0);
   const g = new THREE.ShapeGeometry(s, 6);
-  g.rotateX(Math.PI / 2); // 形状 Y -> +Z（翼面内）
+  g.rotateX(Math.PI / 2); // Shape Y -> +Z within the wing plane
   return g;
 }
 
@@ -119,7 +119,7 @@ function footGeometry() {
   s.quadraticCurveTo(0.04, -0.03, -0.02, -0.012);
   s.closePath();
   const g = new THREE.ExtrudeGeometry(s, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 2, curveSegments: 6 });
-  g.rotateX(-Math.PI / 2); // 平放，脚趾朝 +X
+  g.rotateX(-Math.PI / 2); // Lay flat with toes pointing along +X
   return g;
 }
 
@@ -218,7 +218,7 @@ export function createPelican() {
     return m;
   };
 
-  // ---------- 身体 ----------
+  // ---------- Body ----------
   const body = new THREE.Group();
   body.position.copy(BODY_POS);
   body.rotation.z = BODY_PITCH;
@@ -238,7 +238,7 @@ export function createPelican() {
     shR: anchor(0.14, 0.085, 0.17),
     neck: anchor(0.3, 0.1, 0),
   };
-  // 尾羽
+  // Tail feathers
   const tail = new THREE.Group();
   tail.position.set(-0.37, 0.035, 0);
   body.add(tail);
@@ -251,7 +251,7 @@ export function createPelican() {
     tail.add(f);
   }
 
-  // ---------- 脖子（每帧重建） ----------
+  // ---------- Neck (rebuilt per frame) ----------
   const neck = new DynamicTube(28, 18, (t) => {
     const r = lerp(0.085, 0.05, smoothstep(0.0, 0.45, t));
     return r + 0.004 * Math.sin(t * Math.PI) + (t > 0.85 ? (t - 0.85) * 0.05 : 0);
@@ -263,7 +263,7 @@ export function createPelican() {
   knot.castShadow = true;
   root.add(knot);
 
-  // ---------- 头 ----------
+  // ---------- Head ----------
   const head = new THREE.Group();
   root.add(head);
   const skull = reg(new THREE.Mesh(new THREE.SphereGeometry(0.075, 32, 20), M.white));
@@ -274,7 +274,7 @@ export function createPelican() {
   const throat = reg(new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), M.white));
   throat.position.set(0.02, -0.045, 0);
   head.add(skull, forehead, throat);
-  // 冠羽
+  // Crest feathers
   for (let i = 0; i < 5; i++) {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.07, 6), M.white);
     cone.position.set(-0.085, 0.02 + i * 0.006, (i - 2) * 0.012);
@@ -301,7 +301,7 @@ export function createPelican() {
     eyes.push(eye);
     lids.push(lid);
   }
-  // 头盔
+  // Helmet
   const helmet = new THREE.Group();
   const shell = new THREE.Mesh(helmetGeometry(), M.helmet);
   shell.castShadow = true;
@@ -313,7 +313,7 @@ export function createPelican() {
   helmet.position.set(-0.012, 0.03, 0);
   helmet.rotation.z = -0.12;
   head.add(helmet);
-  // 墨镜
+  // Sunglasses
   const glasses = new THREE.Group();
   for (const s of [-1, 1]) {
     const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.005, 24), M.lens);
@@ -332,7 +332,7 @@ export function createPelican() {
   glasses.add(new THREE.Mesh(new THREE.TubeGeometry(bridgeCurve, 16, 0.003, 6), M.frame));
   head.add(glasses);
 
-  // 嘴与喉囊
+  // Beak and throat pouch
   const beak = new THREE.Group();
   beak.position.set(0.078, -0.016, 0);
   beak.rotation.z = -0.3;
@@ -350,7 +350,7 @@ export function createPelican() {
   const pouch = reg(new THREE.Mesh(pouchGeo, M.pouch));
   pouch.morphTargetInfluences = [0];
   jaw.add(lower, pouch);
-  // 嘴尖锚点（用于判定吃鱼）
+  // Beak-tip anchor used for fish-catch detection
   const beakTip = new THREE.Object3D();
   beakTip.position.set(BEAK_L * 0.8, -0.03, 0);
   beak.add(beakTip);
@@ -358,7 +358,7 @@ export function createPelican() {
   mouth.position.set(BEAK_L * 0.35, -0.04, 0);
   beak.add(mouth);
 
-  // ---------- 腿 ----------
+  // ---------- Legs ----------
   const leg = (s) => {
     const thigh = reg(new THREE.Mesh(unitCylinder(0.064, 0.042, 14), M.white));
     const knee = reg(new THREE.Mesh(new THREE.SphereGeometry(0.043, 14, 10), M.white));
@@ -372,7 +372,7 @@ export function createPelican() {
   };
   const legs = [leg(-1), leg(1)];
 
-  // ---------- 翅膀 ----------
+  // ---------- Wings ----------
   const tertial = panelGeometry(HUMERUS, 0.14, 4);
   const covert = panelGeometry(FOREARM, 0.085, 5);
   const secondary = panelGeometry(FOREARM, 0.165, 7);
@@ -416,7 +416,7 @@ export function createPelican() {
   };
   const wings = [wing(-1), wing(1)];
 
-  // ---------- 动画状态 ----------
+  // ---------- Animation state ----------
   const st = {
     jaw: 0,
     jawTarget: 0,
@@ -459,7 +459,7 @@ export function createPelican() {
 
   const local = (anchorObj, out) => out.copy(anchorObj.position).applyMatrix4(body.matrix);
 
-  // 以骨骼方向与后缘方向建立关节坐标系
+  // Build joint frames from the bone and trailing-edge directions
   function orientJoint(obj, from, to, trailHint) {
     _bx.subVectors(to, from).normalize();
     _bz.copy(trailHint).addScaledVector(_bx, -trailHint.dot(_bx));
@@ -480,7 +480,7 @@ export function createPelican() {
 
   function update(dt, ctx) {
     const { t, crankAngle, pedal, airborne, trick, look, grips, pedals, accel } = ctx;
-    // 身体随踩踏起伏、左右摆
+    // Body bobs and sways with pedaling
     const bob = -Math.abs(Math.sin(crankAngle)) * 0.012 * pedal;
     body.position.set(BODY_POS.x, BODY_POS.y + bob + airborne * 0.025 + trick * 0.03, BODY_POS.z);
     body.rotation.set(Math.sin(crankAngle) * 0.035 * pedal, 0, BODY_PITCH + trick * 0.14 - clamp(accel, -3, 3) * 0.012);
@@ -488,7 +488,7 @@ export function createPelican() {
     tail.rotation.y = Math.sin(crankAngle) * 0.09 * pedal + Math.sin(t * 2) * 0.03;
     tail.rotation.z = trick * 0.25;
 
-    // ----- 腿 IK -----
+    // ----- Leg IK -----
     for (const L of legs) {
       local(L.s < 0 ? A.hipL : A.hipR, V.hip);
       const p = L.s < 0 ? pedals.L : pedals.R;
@@ -503,7 +503,7 @@ export function createPelican() {
       L.foot.rotation.set(0, 0, -0.08 + Math.sin(-crankAngle + (L.s > 0 ? 0 : Math.PI) + 0.6) * 0.12);
     }
 
-    // ----- 翅膀：握把 <-> 展翅 -----
+    // ----- Wings: grip handlebars <-> spread -----
     st.spread = damp(st.spread, trick, 5, dt);
     const k = smoothstep(0, 1, st.spread);
     const flap = Math.sin(t * 8.5) * 0.55 * airborne + Math.sin(t * 2.6) * 0.32 * k + k * 0.08;
@@ -513,7 +513,7 @@ export function createPelican() {
       const grip = s < 0 ? grips.L : grips.R;
       V.pole.set(-0.25, 0.75, s * 0.85);
       solveTwoBone(V.sh, grip, HUMERUS, FOREARM, V.pole, V.el, V.wr);
-      // 展翅姿态（绕肩部 x 轴拍打）
+      // Spread-wing pose flaps around the shoulder x-axis
       V.elS.set(0.0, 0.06, s * HUMERUS * 0.98);
       V.wrS.set(0.02, 0.1, s * (HUMERUS * 0.98 + FOREARM * 0.99));
       _q.setFromAxisAngle(_ax, -s * flap);
@@ -524,7 +524,7 @@ export function createPelican() {
       V.trail.set(-1, lerp(-0.7, 0.0, k), 0);
       orientJoint(W.sh, V.sh, V.el, V.trail);
       orientJoint(W.el, V.el, V.wr, V.trail);
-      // 手部方向：握把时沿前臂，展开时向外延伸
+      // Hand direction follows the forearm while gripping and extends outward when spread
       V.tmp.subVectors(V.wr, V.el).normalize().multiplyScalar(0.1).add(V.wr);
       orientJoint(W.wr, V.wr, V.tmp, V.trail);
       W.prim.forEach((f, i) => {
@@ -535,7 +535,7 @@ export function createPelican() {
       });
     }
 
-    // ----- 头部：看向目标，身体起伏时头部稳定 -----
+    // ----- Head: look toward the target and stabilize against body bobbing -----
     local(A.neck, V.neckBase);
     st.headBob = damp(st.headBob, bob * 0.25, 10, dt);
     V.headPos.set(V.neckBase.x + 0.092, V.neckBase.y + 0.355 - bob * 0.75 + st.headBob, 0);
@@ -549,7 +549,7 @@ export function createPelican() {
     }
     yawT = clamp(yawT, -1.05, 1.05);
     pitchT = clamp(pitchT, -0.55, 0.5);
-    // 大叫：仰头张嘴
+    // Call: lift the head and open the beak
     let honkK = 0;
     if (st.honkT >= 0) {
       st.honkT += dt;
@@ -579,7 +579,7 @@ export function createPelican() {
     st.bulge = Math.max(0, st.bulge - dt * 0.45);
     pouch.morphTargetInfluences[0] = clamp(st.bulge + Math.sin(t * 20) * 0.08 * st.bulge + honkK * 0.25, 0, 1.3);
 
-    // 眨眼
+    // Blink
     st.nextBlink -= dt;
     if (st.nextBlink <= 0 && st.blinkT < 0) {
       st.blinkT = 0;
@@ -593,14 +593,14 @@ export function createPelican() {
     }
     for (const l of lids) l.scale.setScalar(Math.max(0.001, blink > 0.05 ? blink : 0.001));
 
-    // 脖子 S 形曲线
+    // S-shaped neck curve
     neckPts[0].copy(V.neckBase).add(V.tmp.set(-0.03, -0.03, 0));
     neckPts[1].copy(V.neckBase).add(V.tmp.set(0.035, 0.07, 0));
     neckPts[2].copy(V.neckBase).lerp(V.headPos, 0.45).add(V.tmp.set(0.035, 0, 0));
     neckPts[3].set(-0.075, -0.1, 0).applyMatrix4(head.matrix).lerp(V.tmp.copy(V.headPos).add(_by.set(-0.075, -0.1, 0)), 0.4);
     neckPts[4].set(-0.03, -0.03, 0).applyMatrix4(head.matrix);
     neck.update(neckPts);
-    // 围巾结位于脖子根部
+    // Scarf knot at the base of the neck
     const ki = Math.round(neck.tub * 0.2);
     knot.position.copy(neck._P[ki]);
     knot.quaternion.setFromUnitVectors(_bz.set(0, 0, 1), neck._T[ki]);

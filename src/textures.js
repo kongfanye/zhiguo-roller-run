@@ -17,7 +17,7 @@ function toTexture(c, { srgb = true, repeat = true, aniso = 8 } = {}) {
   return t;
 }
 
-// 可平铺的多倍频值噪声
+// Tileable multi-octave value noise
 function tileNoise(size, octaves, seed) {
   const rnd = mulberry32(seed);
   const out = new Float32Array(size * size);
@@ -66,7 +66,7 @@ export function makeDetailTexture(size = 256, lo = 0.78, hi = 1.0, seed = 7) {
   return toTexture(c, { srgb: false });
 }
 
-// 路面：24m x 5.4m 一个周期，含边线、虚线中线、自行车道标识
+// Road tile: 24 m x 5.4 m with edge lines, dashed center lines and bicycle-lane markings
 export function makeRoadTextures() {
   const W = 2048;
   const H = 512;
@@ -77,7 +77,7 @@ export function makeRoadTextures() {
   ctx.fillRect(0, 0, W, H);
   bctx.fillStyle = '#808080';
   bctx.fillRect(0, 0, W, H);
-  // 沥青颗粒
+  // Asphalt grain
   for (let i = 0; i < 90000; i++) {
     const x = rnd() * W;
     const y = rnd() * H;
@@ -89,14 +89,14 @@ export function makeRoadTextures() {
     bctx.fillStyle = `rgb(${bg},${bg},${bg})`;
     bctx.fillRect(x, y, s, s);
   }
-  // 修补块
+  // Repair patches
   for (let i = 0; i < 6; i++) {
     ctx.fillStyle = `rgba(20,20,24,${0.12 + rnd() * 0.12})`;
     const x = rnd() * W;
     const y = rnd() * H;
     ctx.fillRect(x, y, 60 + rnd() * 160, 30 + rnd() * 90);
   }
-  // 车辙暗带
+  // Dark tire tracks
   const grd = ctx.createLinearGradient(0, 0, 0, H);
   grd.addColorStop(0.0, 'rgba(0,0,0,0)');
   grd.addColorStop(0.3, 'rgba(0,0,0,0.10)');
@@ -107,7 +107,7 @@ export function makeRoadTextures() {
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
 
-  // 以米为单位绘制
+  // Draw in meters
   const sx = W / 24;
   const sy = H / 5.4;
   const paintLine = (x, y, w, h, color = '#ecebe2') => {
@@ -120,7 +120,7 @@ export function makeRoadTextures() {
   paintLine(0, 5.1, 24, 0.12);
   for (let x = 0; x < 24; x += 6) paintLine(x, 2.64, 3, 0.12, '#f2c94c');
 
-  // 右侧车道自行车标识 + 箭头（图标"上方"朝向前进方向 +x）
+  // Bicycle symbol and arrow in the right lane; the icon top points forward along +X
   ctx.save();
   ctx.translate(12 * sx, 4.0 * sy);
   ctx.rotate(Math.PI / 2);
@@ -151,7 +151,7 @@ export function makeRoadTextures() {
   ctx.moveTo(-0.5, -0.45);
   ctx.lineTo(-0.2, -0.45);
   ctx.stroke();
-  // 鹈鹕头像简笔
+  // Simple pelican-head glyph
   ctx.beginPath();
   ctx.arc(-0.05, -1.0, 0.16, 0, Math.PI * 2);
   ctx.fill();
@@ -161,7 +161,7 @@ export function makeRoadTextures() {
   ctx.lineTo(0.1, -0.9);
   ctx.closePath();
   ctx.fill();
-  // 前进箭头
+  // Forward arrow
   ctx.beginPath();
   ctx.moveTo(0, -2.9);
   ctx.lineTo(0.45, -2.3);
@@ -179,7 +179,7 @@ export function makeRoadTextures() {
   return { map, bump };
 }
 
-// 羽毛鳞片凹凸
+// Feather-scale relief
 export function makeFeatherTexture() {
   const S = 512;
   const [c, ctx] = makeCanvas(S, S);
@@ -201,7 +201,7 @@ export function makeFeatherTexture() {
       ctx.beginPath();
       ctx.ellipse(x, y - rh * 0.2, rw * 0.62, rh * 1.05, 0, 0, Math.PI);
       ctx.fill();
-      // 羽轴
+      // Feather shaft
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -213,7 +213,7 @@ export function makeFeatherTexture() {
   return toTexture(c, { srgb: false });
 }
 
-// 藤编篮
+// Wicker basket
 export function makeWickerTexture() {
   const S = 256;
   const [c, ctx] = makeCanvas(S, S);
@@ -249,7 +249,7 @@ export function makeSpriteTexture() {
   return toTexture(c, { repeat: false });
 }
 
-// 车架贴花
+// Frame decal
 export function makeDecalTexture(text) {
   const [c, ctx] = makeCanvas(1024, 128);
   ctx.clearRect(0, 0, 1024, 128);
@@ -275,7 +275,7 @@ function drawPelicanGlyph(ctx, x, y, s) {
   ctx.strokeStyle = '#161616';
   ctx.lineWidth = 0.09;
   ctx.lineCap = 'round';
-  // 轮子
+  // Wheels
   ctx.beginPath();
   ctx.arc(-0.62, 0.62, 0.34, 0, Math.PI * 2);
   ctx.stroke();
@@ -291,11 +291,11 @@ function drawPelicanGlyph(ctx, x, y, s) {
   ctx.moveTo(0.62, 0.62);
   ctx.lineTo(0.42, -0.05);
   ctx.stroke();
-  // 身体
+  // Body
   ctx.beginPath();
   ctx.ellipse(-0.25, -0.12, 0.42, 0.26, -0.35, 0, Math.PI * 2);
   ctx.fill();
-  // 脖子+头
+  // Neck and head
   ctx.beginPath();
   ctx.moveTo(0.02, -0.25);
   ctx.quadraticCurveTo(0.2, -0.55, 0.05, -0.78);
@@ -304,7 +304,7 @@ function drawPelicanGlyph(ctx, x, y, s) {
   ctx.beginPath();
   ctx.arc(0.1, -0.84, 0.12, 0, Math.PI * 2);
   ctx.fill();
-  // 大嘴
+  // Large beak
   ctx.beginPath();
   ctx.moveTo(0.18, -0.9);
   ctx.lineTo(0.9, -0.74);
@@ -314,7 +314,7 @@ function drawPelicanGlyph(ctx, x, y, s) {
   ctx.restore();
 }
 
-// 路牌：黄色菱形警示牌
+// Road sign: yellow diamond warning sign
 export function makeSignTexture(kind) {
   const S = 512;
   const [c, ctx] = makeCanvas(S, S);
@@ -344,10 +344,10 @@ export function makeSignTexture(kind) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('45', S / 2, S / 2 - 18);
-    ctx.font = '700 46px "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('鹈鹕限速', S / 2, S / 2 + 110);
+    ctx.font = '700 46px Arial, sans-serif';
+    ctx.fillText('SPEED LIMIT', S / 2, S / 2 + 110);
   } else {
-    // 蓝色指示牌：前方有鱼
+    // Blue information sign: fish ahead
     ctx.fillStyle = '#0f5fa8';
     roundRect(ctx, 20, 110, S - 40, S - 220, 34);
     ctx.fill();
@@ -356,12 +356,12 @@ export function makeSignTexture(kind) {
     roundRect(ctx, 36, 126, S - 72, S - 252, 24);
     ctx.stroke();
     ctx.fillStyle = '#fff';
-    ctx.font = '800 76px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.font = '800 58px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('前方有鱼', S / 2, S / 2 - 40);
+    ctx.fillText('FISH AHEAD', S / 2, S / 2 - 40);
     ctx.font = '700 44px "Arial", sans-serif';
-    ctx.fillText('FISH AHEAD  ➜', S / 2, S / 2 + 56);
+    ctx.fillText('CATCH FISH  ➜', S / 2, S / 2 + 56);
   }
   return toTexture(c, { repeat: false });
 }
@@ -376,7 +376,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// 灯塔条纹 / 遮阳伞条纹
+// Lighthouse stripes / Parasol stripes
 export function makeStripeTexture(colors, n = 8, vertical = false) {
   const [c, ctx] = makeCanvas(256, 256);
   for (let i = 0; i < n; i++) {

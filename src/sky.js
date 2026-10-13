@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clamp, smoothstep, lerp } from './util.js';
 
-// 天空与海面共用的 uniforms（颜色均为线性空间）
+// Uniforms shared by sky and ocean; all colors use linear space
 export const SKY = {
   uSunDir: { value: new THREE.Vector3(0.5, 0.3, -0.8).normalize() },
   uMoonDir: { value: new THREE.Vector3(-0.5, 0.5, 0.7).normalize() },
@@ -98,7 +98,7 @@ void main() {
   vec3 dir = normalize(vDir);
   vec3 col = skyBase(dir);
 
-  // 星空 + 银河
+  // Stars and Milky Way
   if (uNight > 0.01 && dir.y > -0.05) {
     vec3 p = dir * 320.0;
     vec3 cell = floor(p);
@@ -117,11 +117,11 @@ void main() {
     col += vec3(0.28, 0.3, 0.45) * band * mw * mw * 0.35 * uNight * smoothstep(0.0, 0.3, dir.y);
   }
 
-  // 太阳圆盘
+  // Sun disc
   float sd = dot(dir, uSunDir);
   col += uSunColor * smoothstep(0.99955, 0.99975, sd) * 18.0 * (1.0 - uNight);
 
-  // 月亮（带简单月相明暗）
+  // Moon with basic phase shading
   float md = dot(dir, uMoonDir);
   float moon = smoothstep(0.99925, 0.99945, md);
   if (moon > 0.0) {
@@ -133,7 +133,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.97, 0.9) * 2.4 * craters * mix(0.12, 1.0, lit), moon * smoothstep(0.0, 0.5, uNight));
   }
 
-  // 程序化云层
+  // Procedural clouds
   if (dir.y > 0.0) {
     vec2 uv = dir.xz / (dir.y + 0.1) * 0.55 + uCloudOffset;
     float n = fbm(uv * 0.9);
@@ -165,12 +165,12 @@ export function createSky() {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
   mesh.renderOrder = -10;
-  // 用于 PMREM 生成环境光照的副本
+  // Copy used by PMREM to generate environment lighting
   const envMesh = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), mat);
   return { mesh, envMesh, material: mat };
 }
 
-// ------- 一天之中的光照色板（按太阳高度角插值） -------
+// ------- Daily lighting palette interpolated by solar elevation -------
 const hex = (h) => new THREE.Color(h);
 const KEYS = [
   { e: -24, zen: '#02030a', hor: '#070a18', gnd: '#030409', sun: '#000000', li: 0.0, hs: '#1f2c58', hg: '#07070c', hi: 0.42, fog: '#080c1a', exp: 1.5, ct: '#161b2c', cs: '#070912', bloom: 0.95 },
@@ -210,10 +210,10 @@ export function samplePalette(elevDeg, out) {
   return out;
 }
 
-// 时刻 -> 太阳方向；6 点东升（身后山侧），18 点西落（前方海上）
+// Time -> sun direction; rises at 06:00 behind the hills and sets at 18:00 over the sea
 export function sunDirection(hour, out) {
-  const dayT = (hour - 6) / 12; // 0..1 白天
-  const nightT = ((hour - 18 + 24) % 24) / 12; // 0..1 夜晚
+  const dayT = (hour - 6) / 12; // 0..1 Daytime
+  const nightT = ((hour - 18 + 24) % 24) / 12; // 0..1 Nighttime
   const e = hour >= 6 && hour <= 18
     ? Math.sin(dayT * Math.PI) * (66 * Math.PI / 180)
     : -Math.sin(nightT * Math.PI) * 0.9;
@@ -223,8 +223,8 @@ export function sunDirection(hour, out) {
 }
 
 export function moonDirection(hour, out) {
-  // 夜间月亮从海面方向升起，午夜最高
-  const nt = (((hour - 18 + 24) % 24)) / 12; // 0..1 夜晚
+  // The moon rises from the sea at night and peaks at midnight
+  const nt = (((hour - 18 + 24) % 24)) / 12; // 0..1 Nighttime
   const e = Math.sin(clamp(nt, 0, 1) * Math.PI) * 0.95 - 0.12;
   const az = (-110 + nt * 150) * Math.PI / 180;
   out.set(Math.cos(e) * Math.cos(az), Math.sin(e), Math.cos(e) * Math.sin(az)).normalize();

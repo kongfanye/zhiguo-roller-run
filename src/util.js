@@ -7,7 +7,7 @@ export const smoothstep = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1);
   return t * t * (3 - 2 * t);
 };
-// 帧率无关的指数阻尼
+// Frame-rate-independent exponential damping
 export const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
 
 export function mulberry32(seed) {
@@ -23,7 +23,7 @@ export function mulberry32(seed) {
 const UP = new THREE.Vector3(0, 1, 0);
 const _v = new THREE.Vector3();
 
-// 沿 +Y、长度为 1 的圆柱，底部在原点；配合 placeBetween 做可动骨骼
+// Unit-length cylinder along +Y, base at the origin; use placeBetween for articulated bones
 export function unitCylinder(r0, r1, radial = 12) {
   const g = new THREE.CylinderGeometry(r1, r0, 1, radial, 1, false);
   g.translate(0, 0.5, 0);
@@ -51,8 +51,8 @@ export function v3(x, y, z) {
 }
 
 /**
- * 放样几何：沿中心线 center(t) 扫掠截面 section(t,a) -> [y,z]
- * 截面约定 (y,z) = (cos θ·h, sin θ·w)，θ = 2πa
+ * Loft geometry: sweep section(t,a) -> [y,z] along center(t)
+ * Section convention: (y,z) = (cos(theta)*h, sin(theta)*w), theta = 2*pi*a
  */
 export function loft({ segs = 32, ring = 16, center, section, color }) {
   const pos = [];
@@ -91,7 +91,7 @@ export function loft({ segs = 32, ring = 16, center, section, color }) {
 }
 
 /**
- * 每帧可更新的变径管（鹈鹕脖子、围巾结等），平行传输标架避免扭转
+ * Per-frame variable-radius tube for necks and scarf knots; parallel-transport frames avoid twisting
  */
 export class DynamicTube {
   constructor(tub, rad, radiusFn) {
@@ -148,7 +148,7 @@ export class DynamicTube {
       const b = _P[Math.min(tub, i + 1)];
       _T[i].subVectors(b, a).normalize();
     }
-    // 初始法线
+    // Initial normal
     const T0 = _T[0];
     _N.set(0, 0, 1);
     if (Math.abs(T0.dot(_N)) > 0.9) _N.set(1, 0, 0);
@@ -178,7 +178,7 @@ export class DynamicTube {
   }
 }
 
-// 两骨骼 IK：hip->knee->ankle，pole 决定弯曲方向；返回是否够得着
+// Two-bone IK: hip -> knee -> ankle; pole sets the bend direction; return whether the target is reachable
 const _dir = new THREE.Vector3();
 const _bend = new THREE.Vector3();
 export function solveTwoBone(A, T, a, b, pole, outMid, outEnd) {
@@ -198,7 +198,7 @@ export function solveTwoBone(A, T, a, b, pole, outMid, outEnd) {
   return ok;
 }
 
-// 对几何体整体着色（写入顶点色），便于合并成单一网格
+// Write vertex colors to the geometry so it can be merged into one mesh
 export function paint(geo, color) {
   const c = new THREE.Color(color);
   const n = geo.attributes.position.count;
@@ -212,7 +212,7 @@ export function paint(geo, color) {
   return geo;
 }
 
-// 合并前统一属性：非索引 + position/normal/color
+// Normalize attributes before merging: non-indexed position/normal/color
 export function normalizeForMerge(geo) {
   let g = geo.index ? geo.toNonIndexed() : geo;
   for (const k of Object.keys(g.attributes)) {

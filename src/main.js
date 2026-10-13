@@ -23,19 +23,19 @@ const qp = (k, d) => (Q.has(k) ? Q.get(k) : d);
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const $ = (s) => document.querySelector(s);
 
-// ---------------- 画质 ----------------
+// ---------------- Quality ----------------
 const DPR = window.devicePixelRatio || 1;
 const QUALITY = {
-  low: { name: '流畅', pr: Math.min(DPR, 1) * 0.8, shadow: 1024, bloom: false, msaa: 0, density: 0.5 },
-  medium: { name: '均衡', pr: Math.min(DPR, 1.25), shadow: 2048, bloom: true, msaa: 2, density: 0.8 },
-  high: { name: '精美', pr: Math.min(Math.max(DPR, 1.25), 1.75), shadow: 2048, bloom: true, msaa: 4, density: 1 },
-  ultra: { name: '极致', pr: Math.min(DPR, 2.25), shadow: 4096, bloom: true, msaa: 4, density: 1.25 },
+  low: { name: 'Low', pr: Math.min(DPR, 1) * 0.8, shadow: 1024, bloom: false, msaa: 0, density: 0.5 },
+  medium: { name: 'Medium', pr: Math.min(DPR, 1.25), shadow: 2048, bloom: true, msaa: 2, density: 0.8 },
+  high: { name: 'High', pr: Math.min(Math.max(DPR, 1.25), 1.75), shadow: 2048, bloom: true, msaa: 4, density: 1 },
+  ultra: { name: 'Ultra', pr: Math.min(DPR, 2.25), shadow: 4096, bloom: true, msaa: 4, density: 1.25 },
 };
 let qualityKey = qp('q', isTouch ? 'medium' : 'high');
 if (!QUALITY[qualityKey]) qualityKey = 'high';
 let quality = QUALITY[qualityKey];
 
-// ---------------- 渲染器 ----------------
+// ---------------- Renderer ----------------
 const canvasHost = $('#app');
 let renderer;
 try {
@@ -58,7 +58,7 @@ const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.05, 9
 scene.add(camera);
 const orbitCam = camera.clone();
 
-// ---------------- 天空 / 环境光 ----------------
+// ---------------- Sky / Ambient light ----------------
 const sky = createSky();
 scene.add(sky.mesh);
 const pmrem = new THREE.PMREMGenerator(renderer);
@@ -89,17 +89,17 @@ scene.add(sun, sun.target);
 const lampLights = [new THREE.PointLight('#ffc27a', 0, 14, 1.6), new THREE.PointLight('#ffc27a', 0, 14, 1.6)];
 lampLights.forEach((l) => scene.add(l));
 const lampPos = [new THREE.Vector3(), new THREE.Vector3()];
-// 夜间跟随相机的柔和补光，保证主角可读
+// Soft camera-following fill light keeps the character visible at night
 const fillLight = new THREE.PointLight('#b9c8ff', 0, 10, 1.2);
 fillLight.position.set(0.6, 0.8, 0.5);
 camera.add(fillLight);
 
-// ---------------- 世界 ----------------
+// ---------------- World ----------------
 const ocean = createOcean();
 scene.add(ocean.mesh);
 const world = createWorld(scene, { density: quality.density });
 
-// ---------------- 骑手 ----------------
+// ---------------- Rider ----------------
 const rider = new THREE.Group();
 rider.rotation.order = 'YXZ';
 const wheelieRoot = new THREE.Group();
@@ -112,7 +112,7 @@ const zhiguo = createZhiguo();
 content.add(zhiguo.root);
 scene.add(rider);
 
-// ---------------- 特效 ----------------
+// ---------------- Effects ----------------
 const sprite = makeSpriteTexture();
 const dust = new Particles(scene, 420, { additive: false, opacity: 0.35 });
 const sparkles = new Particles(scene, 360, { additive: true });
@@ -122,7 +122,7 @@ const speedLines = new SpeedLines(camera);
 const scarf = new Scarf(scene);
 scarf.mesh.visible = false;
 
-// 可收集的鱼
+// Collectible fish
 const fishGeo = fishGeometry();
 const fishMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.6, roughness: 0.25, emissive: new THREE.Color('#1f6b8f'), emissiveIntensity: 0.45, side: THREE.DoubleSide });
 const goldMat = new THREE.MeshStandardMaterial({ color: '#ffcf3f', metalness: 1, roughness: 0.18, emissive: new THREE.Color('#ff9500'), emissiveIntensity: 0.9, side: THREE.DoubleSide });
@@ -138,7 +138,7 @@ for (let i = 0; i < 12; i++) {
   scene.add(m);
   fishes.push({ mesh: m, halo, active: false, x: 0, y: 0, z: 0, golden: false, phase: 0, caught: -1 });
 }
-// 跃出海面的鱼
+// Fish leaping out of the sea
 const jumpers = [];
 for (let i = 0; i < 5; i++) {
   const m = new THREE.Mesh(fishGeo, fishMat);
@@ -148,7 +148,7 @@ for (let i = 0; i < 5; i++) {
   jumpers.push({ mesh: m, t: -1, x: 0, z: 0, dur: 1.2, h: 1.5, dir: 1 });
 }
 
-// 调试：?nantest=1 在画面中放一个输出 NaN/Inf 的小方块，用于验证后期清理
+// Debug: ?nantest=1 adds a small NaN/Inf-emitting quad to verify post-processing cleanup
 if (qp('nantest', '0') === '1') {
   const bad = new THREE.Mesh(
     new THREE.PlaneGeometry(0.06, 0.06),
@@ -162,9 +162,9 @@ if (qp('nantest', '0') === '1') {
   scene.add(bad);
 }
 
-// ---------------- 后期 ----------------
-// 泛光前清理 NaN/Inf：一个坏像素会被 Bloom 的多级模糊扩散成大块黑色矩形。
-// 用位运算判断（不依赖 isnan，避免被驱动的快速数学优化掉），并把 HDR 值限制在安全范围内
+// ---------------- Post-processing ----------------
+// Clean NaN/Inf before bloom: one invalid pixel can spread into a large black rectangle through multi-level blur.
+// Use bit checks instead of isnan to avoid driver fast-math optimizations; clamp HDR values to a safe range
 const sanitizeShader = {
   uniforms: { tDiffuse: { value: null } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
@@ -224,7 +224,7 @@ function buildComposer() {
   composer.addPass(new OutputPass());
 }
 
-// ---------------- 设置 / 状态 ----------------
+// ---------------- Settings / State ----------------
 const settings = {
   cruise: +qp('speed', 7.5),
   autopilot: true,
@@ -290,10 +290,10 @@ const S = {
 const keys = {};
 const achieved = new Set();
 
-// ---------------- 音频 ----------------
+// ---------------- Audio ----------------
 const audio = new AudioEngine();
 
-// ---------------- 相机 ----------------
+// ---------------- Cameras ----------------
 const controls = new OrbitControls(orbitCam, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
@@ -309,11 +309,11 @@ controls.addEventListener('start', () => {
 const focus = new THREE.Vector3();
 const prevFocus = new THREE.Vector3();
 const CAMS = [
-  { id: 'orbit', label: '自由环绕' },
-  { id: 'chase', label: '追随' },
-  { id: 'side', label: '侧面跟拍' },
-  { id: 'cine', label: '电影运镜' },
-  { id: 'pov', label: '指锅视角' },
+  { id: 'orbit', label: 'Orbit' },
+  { id: 'chase', label: 'Follow' },
+  { id: 'side', label: 'Side' },
+  { id: 'cine', label: 'Cinematic' },
+  { id: 'pov', label: 'First person' },
 ];
 let camMode = qp('cam', 'cine');
 if (!CAMS.find((c) => c.id === camMode)) camMode = 'orbit';
@@ -371,7 +371,7 @@ function povPose(out) {
 }
 
 function cameraUpdate(dt) {
-  // 焦点：骑手车身中部
+  // Focus: the center of the rider
   prevFocus.copy(focus);
   focus.set(rider.position.x + 0.05, rider.position.y + (camera.aspect < 0.75 ? 0.85 : 1.03), rider.position.z);
   let fixedPose = true;
@@ -413,7 +413,7 @@ function cameraUpdate(dt) {
       camTmp.fov = f;
     }
   }
-  // 平滑追随 & 防止钻地
+  // Smooth following and prevent the camera from going underground
   if (fixedPose) {
     if (camMode === 'chase' || camMode === 'side') {
       camera.userData.smooth = camera.userData.smooth || camTmp.pos.clone();
@@ -463,7 +463,7 @@ function flashCut() {
   flashTimer = setTimeout(() => el.classList.remove('go'), 400);
 }
 
-// ---------------- 光照与时间 ----------------
+// ---------------- Lighting and time ----------------
 const pal = {};
 const sunDir = new THREE.Vector3();
 const moonDir = new THREE.Vector3();
@@ -492,7 +492,7 @@ function updateLighting(dt) {
   SKY.uCloudShade.value.copy(pal.cs);
   SKY.uCloudOffset.value.set(S.distance * 0.0009 + S.t * 0.004, S.t * 0.0015);
 
-  // 太阳 / 月光二选一
+  // Choose either sunlight or moonlight
   const useMoon = elev < -4;
   const lightDir = useMoon ? moonDir : sunDir;
   sun.position.copy(rider.position).addScaledVector(lightDir, 40);
@@ -522,12 +522,12 @@ function updateLighting(dt) {
   }
   fillLight.intensity = .15 + night * 4.8;
   gradePass.uniforms.uWarm.value = smoothstep(25, 3, elev) * (1 - night) * 0.8;
-  // 环境贴图节流刷新
+  // Throttle environment-map refreshes
   if (Math.abs(hour - envHour) > 0.18 || envHour < 0) {
     envHour = hour;
     refreshEnv();
   }
-  // 路灯点光源
+  // Streetlight point lights
   world.lampPositions(S.distance, lampPos);
   lampLights.forEach((l, i) => {
     l.position.copy(lampPos[i]);
@@ -536,7 +536,7 @@ function updateLighting(dt) {
   return { elev, night };
 }
 
-// ---------------- 滑行物理 ----------------
+// ---------------- Skating physics ----------------
 const tmpV = new THREE.Vector3();
 const tmpV2 = new THREE.Vector3();
 const mouthW = new THREE.Vector3();
@@ -562,7 +562,7 @@ function updateRide(dt) {
   S.distance += S.speed * dt;
   S.wheel += (S.speed / WHEEL_R) * dt;
 
-  // 自动变速：让踏频保持在 ~85 rpm
+  // Automatic shifting keeps cadence near 85 rpm
   const wheelRpm = (S.speed / WHEEL_R) * 60 / TAU;
   if (settings.autoGear && S.time - S.lastGearManual > 8) {
     let best = S.gear;
@@ -586,7 +586,7 @@ function updateRide(dt) {
   S.crank += crankW * dt;
   S.cadence = (crankW * 60) / TAU;
 
-  // 变道 / 自动驾驶
+  // Lane changes / Autopilot
   const steerIn = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   if (steerIn) {
     S.lastSteer = S.time;
@@ -606,7 +606,7 @@ function updateRide(dt) {
   const steerT = S.trickT > 0 ? 0 : -clamp(S.latAcc * 0.05 + S.laneV * 0.12 / Math.max(1, S.speed * 0.3), -0.35, 0.35) + wobble;
   S.steer = damp(S.steer, steerT, 10, dt);
 
-  // 跳跃
+  // Jump
   if (S.airborne) {
     S.vy -= 13 * dt;
     S.y += S.vy * dt;
@@ -617,7 +617,7 @@ function updateRide(dt) {
       burstDust(24);
     }
   }
-  // 特技：放手 + 抬前轮
+  // Trick state: release hands and lift the front wheel
   if (S.trickT > 0) S.trickT -= dt;
   S.trick = damp(S.trick, S.trickT > 0 ? 1 : 0, 4, dt);
   const wheelieT = S.trick * 0.3 + (S.airborne ? S.vy * 0.025 : 0);
@@ -663,7 +663,7 @@ function honk() {
   unlock('honk');
 }
 
-// ---------------- 收集鱼 ----------------
+// ---------------- Collect fish ----------------
 const LANES = [-1.8, -0.6, 0.6, 1.8];
 function nextFish(range) {
   let best = null;
@@ -733,7 +733,7 @@ function updateFishes(dt) {
         tmpV2.set(rnd() - 0.5, rnd() * 0.9 - 0.2, rnd() - 0.5).normalize().multiplyScalar(0.8 + rnd() * 1.6);
         sparkles.emit(mouthW, tmpV2, rnd() < 0.5 ? (f.golden ? gold : cyan) : white, 0.035 + rnd() * 0.03, 0.6 + rnd() * 0.6, { drag: 3 });
       }
-      popScore(f.golden ? '+5 金鱼!' : '+1', f.golden);
+      popScore(f.golden ? '+5 Golden fish!' : '+1', f.golden);
       unlock('fish1');
       if (f.golden) unlock('golden');
       if (S.fish >= 10) unlock('fish10');
@@ -742,7 +742,7 @@ function updateFishes(dt) {
   }
 }
 
-// 跃出海面的鱼（点击海面或随机）
+// Fish leap when the sea is clicked or at random
 function launchJumper(x, z) {
   const j = jumpers.find((q) => q.t < 0);
   if (!j) return;
@@ -806,7 +806,7 @@ function emitDust(dt) {
   }
 }
 
-// ---------------- 指锅看向 ----------------
+// ---------------- Zhiguo gaze ----------------
 let glanceT = 0;
 let glanceKind = 0;
 function computeLook(dt) {
@@ -830,22 +830,22 @@ function computeLook(dt) {
   return zhiguo.root.worldToLocal(lookTarget);
 }
 
-// ---------------- 成就 / 提示 ----------------
+// ---------------- Achievements / Notifications ----------------
 const ACH = {
-  fish1: ['🐟', '第一条鱼', '第一份海岸小惊喜'],
-  golden: ['🌟', '金色传说', '收集了一条金鱼 (+5)'],
-  fish10: ['🎣', '十鱼到手', '收集到了 10 条鱼'],
-  fish50: ['🏆', '海岸渔王', '累计 50 条鱼'],
-  jump: ['🦘', '起飞！', '第一次跳跃'],
-  trick: ['🛼', '轮滑特技', '跟着海风轻盈滑行'],
-  trick3: ['🎪', '杂技指锅', '完成 3 次特技'],
-  speed30: ['💨', '时速 30', '风在耳边呼啸'],
-  speed45: ['⚡', '疾风指锅', '时速突破 45 km/h'],
-  km1: ['🛣️', '滑行 1 公里', '海岸线才刚开始'],
-  km5: ['🗺️', '滑行 5 公里', '指锅的长途轮滑'],
-  night: ['🌙', '夜滑', '星光与路灯作伴'],
-  bell10: ['🔔', '铃铃铃', '打铃 10 次，路人已让开'],
-  honk: ['📢', '指锅加油！', '向海风打个招呼'],
+  fish1: ['🐟', 'First Catch', 'Your first surprise along the coast'],
+  golden: ['🌟', 'Golden Catch', 'Caught a golden fish (+5)'],
+  fish10: ['🎣', 'Ten Fish', 'Caught 10 fish'],
+  fish50: ['🏆', 'Coastal Champion', 'Caught 50 fish in total'],
+  jump: ['🦘', 'Lift-off!', 'Your first jump'],
+  trick: ['🛼', 'Skating trick', 'Glide with the sea breeze'],
+  trick3: ['🎪', 'Trick Master', 'Performed 3 tricks'],
+  speed30: ['💨', '30 km/h', 'Feel the wind rushing past'],
+  speed45: ['⚡', 'Speed Skater', 'Reached over 45 km/h'],
+  km1: ['🛣️', 'First Kilometer', 'The coast is only beginning'],
+  km5: ['🗺️', 'Five Kilometers', 'A long coastal skate with Zhiguo'],
+  night: ['🌙', 'Night Skate', 'Skate under stars and streetlights'],
+  bell10: ['🔔', 'Ring Ring', 'Rang the bell 10 times to clear the way'],
+  honk: ['📢', 'Go, Zhiguo!', 'Say hello to the sea breeze'],
 };
 function unlock(id) {
   if (achieved.has(id) || !S.started) return;
@@ -875,7 +875,7 @@ function popScore(text, golden) {
   const p = document.createElement('div');
   p.className = 'pop' + (golden ? ' gold' : '');
   p.textContent = text;
-  // 定位到指锅嘴部的屏幕坐标
+  // Project Zhiguo's mouth into screen coordinates
   tmpV.copy(mouthW).project(camera);
   p.style.left = `${(tmpV.x * 0.5 + 0.5) * innerWidth}px`;
   p.style.top = `${(-tmpV.y * 0.5 + 0.5) * innerHeight}px`;
@@ -940,7 +940,7 @@ function updateHud(dt, info) {
   if (info.night > 0.8 && S.started && S.time > 5) unlock('night');
 }
 
-// 自适应分辨率：按真实时间测帧率；以观测到的刷新上限为基准（兼容 30fps 锁帧），记住失败过的像素比上限
+// Adaptive resolution: measure real-time FPS against the observed refresh ceiling (including 30 FPS caps), and remember pixel ratios that failed
 let lowStreak = 0;
 let highStreak = 0;
 let refreshCap = 0;
@@ -982,7 +982,7 @@ function applyQuality(key) {
   buildComposer();
 }
 
-// ---------------- 输入 ----------------
+// ---------------- Input ----------------
 const KEYMAP = {
   KeyW: 'up',
   ArrowUp: 'up',
@@ -1047,7 +1047,7 @@ addEventListener('keydown', (e) => {
     case 'KeyP':
       S.paused = !S.paused;
       audio.mute(S.paused);
-      toast(S.paused ? '⏸' : '▶️', S.paused ? '已暂停' : '继续滑行', '按 P 切换');
+      toast(S.paused ? '⏸' : '▶️', S.paused ? 'Paused' : 'Keep skating', 'Press P to toggle');
       break;
     default:
       break;
@@ -1056,7 +1056,7 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => {
   const k = KEYMAP[e.code];
   if (k) keys[k] = false;
-  // macOS 按住 Cmd 时不会发送其它键的 keyup
+  // On macOS, holding Cmd suppresses keyup events for other keys
   if (e.key === 'Meta') for (const key of Object.keys(keys)) keys[key] = false;
 });
 addEventListener('blur', () => {
@@ -1072,7 +1072,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 renderer.domElement.addEventListener('pointermove', (e) => {
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   S.lastPointer = S.time;
-  // 在其它镜头下拖拽，自动切到自由环绕
+  // Dragging in another camera mode automatically switches to Orbit
   if (e.buttons && camMode !== 'orbit' && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10) setCamMode('orbit');
 });
 renderer.domElement.addEventListener('pointerup', (e) => {
@@ -1088,7 +1088,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   }
 });
 
-// 触屏按钮
+// Touch controls
 document.querySelectorAll('[data-key]').forEach((b) => {
   const k = b.dataset.key;
   const on = (e) => {
@@ -1148,7 +1148,7 @@ addEventListener('pointerdown', () => {
 });
 function toggleMusic() {
   settings.music = !settings.music;
-  // 静音进入后再打开音乐：此时有用户手势，可以启动音频
+  // Enabling music after a muted start provides the user gesture needed to start audio
   if (settings.music && !audio.ctx) {
     audio.start();
     audio.setVolume(settings.volume);
@@ -1168,12 +1168,12 @@ function shareView() {
   u.searchParams.set('time', settings.hour.toFixed(2));
   u.searchParams.set('cam', camMode);
   navigator.clipboard?.writeText(u.toString()).then(
-    () => toast('🔗', '已复制分享链接', '打开即回到当前时刻与镜头'),
-    () => toast('🔗', '分享链接', u.toString()),
+    () => toast('🔗', 'Share link copied', 'Open it to restore this time and camera'),
+    () => toast('🔗', 'Share link', u.toString()),
   );
 }
 
-// ---------------- 截图 ----------------
+// ---------------- Screenshot ----------------
 let wantShot = false;
 function takeShot() {
   renderer.domElement.toBlob((b) => {
@@ -1183,41 +1183,41 @@ function takeShot() {
     a.download = `zhiguo-run-${Date.now()}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast('📸', '截图已保存', '分享你的指锅滑行瞬间');
+    toast('📸', 'Screenshot saved', 'Share your skating moment with Zhiguo');
   });
 }
 
 // ---------------- GUI ----------------
-const gui = new GUI({ title: '⚙️ 参数面板', container: $('#guiHost') });
+const gui = new GUI({ title: '⚙️ Settings', container: $('#guiHost') });
 gui.hide();
-const f1 = gui.addFolder('滑行');
-f1.add(settings, 'cruise', 0, 14, 0.5).name('巡航速度 m/s');
-f1.add(settings, 'autopilot').name('自动驾驶（追鱼）');
-f1.add(settings, 'autoGear').name('自动变速');
-const f2 = gui.addFolder('时间与天气');
-f2.add(settings, 'hour', 0, 24, 0.01).name('时刻').listen();
-f2.add(settings, 'timeFlow').name('时间流动').listen();
-f2.add(settings, 'dayRate', 0, 0.5, 0.005).name('流速 (时/秒)');
-f2.add(settings, 'cloud', 0, 0.9, 0.01).name('云量');
-f2.add(settings, 'waveAmp', 0, 2.2, 0.05).name('浪高');
-f2.add(settings, 'fog', 0.6, 3, 0.05).name('雾浓度');
-const f3 = gui.addFolder('画面');
-f3.add(settings, 'quality', { 流畅: 'low', 均衡: 'medium', 精美: 'high', 极致: 'ultra' }).name('画质').onChange(applyQuality);
-f3.add(settings, 'bloom').name('泛光').onChange((v) => (bloom.enabled = v && quality.bloom));
-f3.add(settings, 'bloomBoost', 0, 3, 0.05).name('泛光强度');
-f3.add(settings, 'exposure', 0.4, 2, 0.01).name('曝光');
-f3.add(settings, 'showFps').name('显示帧率');
-const f5 = gui.addFolder('声音');
-f5.add(settings, 'volume', 0, 1, 0.01).name('主音量').onChange((v) => {
+const f1 = gui.addFolder('Glide');
+f1.add(settings, 'cruise', 0, 14, 0.5).name('Cruise speed (m/s)');
+f1.add(settings, 'autopilot').name('Autopilot (catch fish)');
+f1.add(settings, 'autoGear').name('Auto shift');
+const f2 = gui.addFolder('Time & weather');
+f2.add(settings, 'hour', 0, 24, 0.01).name('Time').listen();
+f2.add(settings, 'timeFlow').name('Time flow').listen();
+f2.add(settings, 'dayRate', 0, 0.5, 0.005).name('Time rate (hours/s)');
+f2.add(settings, 'cloud', 0, 0.9, 0.01).name('Cloud cover');
+f2.add(settings, 'waveAmp', 0, 2.2, 0.05).name('Wave height');
+f2.add(settings, 'fog', 0.6, 3, 0.05).name('Fog density');
+const f3 = gui.addFolder('Graphics');
+f3.add(settings, 'quality', { Low: 'low', Medium: 'medium', High: 'high', Ultra: 'ultra' }).name('Quality').onChange(applyQuality);
+f3.add(settings, 'bloom').name('Bloom').onChange((v) => (bloom.enabled = v && quality.bloom));
+f3.add(settings, 'bloomBoost', 0, 3, 0.05).name('Bloom intensity');
+f3.add(settings, 'exposure', 0.4, 2, 0.01).name('Exposure');
+f3.add(settings, 'showFps').name('Show FPS');
+const f5 = gui.addFolder('Audio');
+f5.add(settings, 'volume', 0, 1, 0.01).name('Master volume').onChange((v) => {
   ensureAudio();
   audio.setVolume(v);
 });
-f5.add(settings, 'music').name('生成式音乐').listen().onChange((v) => {
+f5.add(settings, 'music').name('Generative music').listen().onChange((v) => {
   ensureAudio();
   audio.setMusic(v);
   $('[data-act="music"]').classList.toggle('off', !v);
 });
-f5.add(settings, 'musicVolume', 0, 1, 0.01).name('音乐音量').onChange((v) => {
+f5.add(settings, 'musicVolume', 0, 1, 0.01).name('Music volume').onChange((v) => {
   ensureAudio();
   audio.setMusicVolume(v);
 });
@@ -1230,7 +1230,7 @@ function toggleGui() {
   $('[data-act="gui"]').classList.toggle('on', !gui._hidden);
 }
 
-// ---------------- 开场 ----------------
+// ---------------- Intro ----------------
 function start(withSound) {
   if (S.started || !zhiguo.state.ready) return;
   S.started = true;
@@ -1246,7 +1246,7 @@ function start(withSound) {
     controls.target.copy(focus);
     controls.update();
   }
-  setTimeout(() => toast('🛼', '出发！', isTouch ? '点屏幕按钮加速、变道、跳跃' : 'W/S 加减速 · A/D 变道 · 空格跳 · T 特技'), 900);
+  setTimeout(() => toast('🛼', 'Let’s skate!', isTouch ? 'Use the on-screen buttons to speed up, steer and jump' : 'W/S: speed · A/D: steer · Space: jump · T: trick'), 900);
 }
 $('#startBtn').addEventListener('click', () => start(true));
 $('#startMute').addEventListener('click', () => {
@@ -1260,12 +1260,12 @@ zhiguo.ready.then(() => {
   if (qp('autostart', '0') === '1') start(false);
 }).catch(() => {
   const status = $('#characterLoading');
-  status.textContent = '角色图片加载失败，请刷新页面重试。';
+  status.textContent = 'Character image could not load. Please refresh and try again.';
   status.setAttribute('role', 'alert');
 });
 setCamMode(camMode, true);
 
-// ---------------- 主循环 ----------------
+// ---------------- Main loop ----------------
 const timer = new THREE.Timer();
 timer.connect(document);
 const windV = new THREE.Vector3();
@@ -1290,7 +1290,7 @@ function frame(ts) {
   info = updateLighting(dt);
   world.update(S.distance, dt, S.t, env);
 
-  // 骑手 IK 与动画
+  // Rider IK and animation
 
   const glasses = settings.glasses === 'auto' ? info.night < 0.3 : settings.glasses === 'on';
   zhiguo.update(dt, {
@@ -1312,7 +1312,7 @@ function frame(ts) {
   zhiguo.root.updateMatrixWorld(true);
   S.cadence = zhiguo.state.cadenceSpm;
 
-  // 围巾：根部取脖子结的后侧
+  // Scarf: place the root behind the neck knot
   if (settings.scarf) {
     scarfA.set(-0.07, 0.025, 0.01);
     scarfB.set(-0.07, -0.04, -0.01);
@@ -1370,14 +1370,14 @@ addEventListener('resize', () => {
   bloom.resolution.set(innerWidth / 2, innerHeight / 2);
 });
 
-// 首帧前预热一次，避免开场卡顿
+// Warm up before the first frame to avoid an initial stutter
 world.update(0, 0, 0, env);
 refreshEnv();
 requestAnimationFrame(frame);
 $('#loading')?.remove();
 document.body.classList.add('ready');
 
-// 调试接口（自动化测试截图使用）
+// Debug interface for automated render tests
 window.__zhiguo = {
   zhiguo,
   scene,

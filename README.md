@@ -1,48 +1,47 @@
-# 指锅快跑
+# Zhiguo Roller Run
 
-在线游戏：[点击开始滑行](https://kongfanye.github.io/zhiguo-roller-run/)
+Online game: [Start skating](https://kongfanye.github.io/zhiguo-roller-run/)
 
-游戏作者：kongfanye。游戏封面使用用户提供的指锅真人轮滑照片抠图，作者头像使用用户提供的红衣小男孩图片。
+Game by kongfanye. The cover uses a cutout from the user's real photograph of Zhiguo on inline skates. The author avatar is the user's image of a boy in red.
 
-穿上轮滑鞋，沿着 3D 海岸线追鱼。支持电脑和手机，包含五种镜头、昼夜、音效、跳跃和单脚特技。
+Lace up your skates and catch fish along a 3D coast. Play on desktop or mobile, with five camera modes, day and night, sound effects, jumps and a one-foot balance trick.
 
-角色全身使用三维网格与关节。第十一版按用户指定的旧版形象恢复眼镜、微笑和中分双辫，直接复用旧版正面素材，修正下颌比例和脸部中央的光照接缝。手部补全了原导出时遗漏的指尖，以独立指节生成放松姿态，手掌保持原有体积，手腕与前臂连续衔接。第十二版镜像修正左右手的对应关系，使掌心朝向身体时拇指位于前侧。服装为开襟米蓝格子短袖衬衫、灰色内搭、深色短裤、白袜和黑红轮滑鞋。侧面、耳部和后脑仍为近似建模，并非扫描模型。
+The entire character uses 3D meshes and joints. Version 11 restored the glasses, smile and center-parted twin braids from the earlier appearance selected by the user. It reuses the earlier front portrait, adjusts the jaw proportions and removes the lighting seam down the face. Missing fingertips were restored; each finger bends around its own joints into a relaxed pose, the palm retains its volume, and the wrist blends continuously into the forearm. Version 12 mirrors the hand bindings so the thumbs point forward when the palms face the body. Clothing consists of an open beige-and-blue plaid short-sleeve shirt, a gray undershirt, dark shorts, white socks and black-and-red inline skates. The side profile, ears and back of the head are approximate models rather than a scan.
 
-保留现有的人体骨架和轮滑动作：左右交替蹬地、回收、落地承重，手臂和双辫连续跟随，滑行、跳跃落地与单脚平衡平滑过渡。面部材质内嵌于 HTML，直接打开文件也能显示。八个方向共用同一个立体模型，镜头不会改变人物形状。动作说明见 [MOTION-REFERENCES.md](MOTION-REFERENCES.md)，素材来源见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，面部与封面的说明见 [CHARACTER-ASSETS.md](CHARACTER-ASSETS.md)。
+The existing skeleton and skating motion remain: alternate sideways pushes, recovery and weight transfer, with continuous arm and braid movement and smooth transitions between gliding, jumping, landing and balancing. The face texture is embedded in the HTML, so it also loads when the file is opened directly. All eight viewing angles use the same 3D model; the camera never changes the character's shape. See [MOTION-REFERENCES.md](MOTION-REFERENCES.md) for movement notes, [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution, and [CHARACTER-ASSETS.md](CHARACTER-ASSETS.md) for face and cover assets.
 
-`docs/character.html` 是独立的三维人物预览，提供用户选定的旧版形象对照，支持八方向、面部特写、上半身、俯视、拖拽环绕、慢速播放、暂停以及轮滑/滑行/平衡/跳跃。它与游戏使用相同模型和动画代码，可直接在浏览器打开。
+`docs/character.html` is a standalone 3D character preview with the selected earlier reference. It supports eight directions, face and upper-body framing, a top view, drag-to-orbit, slow playback, pause, and skating/gliding/balancing/jumping. It shares the game's model and animation code and opens directly in a browser.
 
-## 打开游戏
+## Play
 
-玩家访问 https://kongfanye.github.io/zhiguo-roller-run/，无需下载源码。GitHub 仓库中的 HTML 代码页与游戏网址是两个地址。
+Visit [the live game](https://kongfanye.github.io/zhiguo-roller-run/) without downloading source code. The HTML source page in the GitHub repository and the playable game are different URLs.
 
-电脑操作：W/S 加速刹车，A/D 变道，空格跳跃，T 特技，C 切换镜头。手机使用屏幕按钮。不操作时会自动滑行追鱼。
+Desktop controls: W/S to accelerate/brake, A/D to steer, Space to jump, T for a trick, and C to switch cameras. On mobile, use the on-screen buttons. With no manual input, Zhiguo automatically skates and chases fish.
 
-## GitHub Pages 设置
+## GitHub Pages setup
 
-1. 将本目录的文件上传到自己的公开仓库 `zhiguo-roller-run`，使用 `main` 分支。
-2. 打开仓库 Settings → Pages。
-3. Source 选择 Deploy from a branch；Branch 选择 main；Folder 选择 /docs；点击 Save。
-4. 等待 GitHub Pages 发布成功，打开控制台显示的正式网址。
+1. Upload this directory to a public repository named `zhiguo-roller-run` on the `main` branch.
+2. Open Settings → Pages in the repository.
+3. Select Deploy from a branch, choose `main` and `/docs`, then click Save.
+4. Wait for deployment to finish and open the published URL shown by GitHub.
 
-此目录已经含完整构建结果 `docs/index.html` 与 `docs/assets`，启用 Pages 时不需要 Node.js、npm 或服务器。所有运行时脚本内联、图片使用相对路径，兼容 GitHub Pages 的仓库子路径；音效在浏览器生成，没有外部字体、脚本 CDN 或后端接口依赖。
+The complete build is included in `docs/index.html` and `docs/assets`. Serving it with Pages requires no Node.js, npm or application server. Runtime scripts are inlined, and asset links use relative paths compatible with a repository subdirectory. Sounds are generated in the browser; there are no external font, script CDN or backend dependencies.
 
-GitHub Pages 是静态网页托管，无需另购域名；中国大陆不同地区的连接状况仍需实测。换到 GitHub Pages 本身不能保证免代理访问。
+GitHub Pages provides static hosting without purchasing a domain. Connectivity from mainland China varies by location and must be tested; switching to Pages alone does not guarantee access without a proxy.
 
-官方说明：https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+See GitHub's [publishing-source documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
-## 修改和重建
+## Edit and rebuild
 
-`npm ci` 安装依赖，`npm test` 检查动作约束、30/60/120 Hz 下的关节连续性、双辫运动、脸部接缝，以及手部完整性和变形，`npm run build` 更新游戏和人物预览。`npm run test:render` 使用本机 Edge 进行八方向、手机画面、动作切换及直接打开 HTML 的浏览器验证；其他 Chromium 浏览器可通过 `EDGE_PATH` 指定可执行文件。将源码及 docs 一起提交并推送后，Pages 会重新发布。
+Run `npm ci` to install dependencies. `npm test` checks motion constraints, joint continuity at 30/60/120 Hz, braid movement, face seams, hand completeness and deformation. `npm run build` updates the game and character preview. `npm run test:render` uses the installed Edge browser to verify eight directions, mobile rendering, motion controls and direct HTML loading; set `EDGE_PATH` to use another Chromium executable. Commit and push both the source and `docs` output to redeploy Pages.
 
-## 原作
+The published interface, runtime messages, code comments, test captions and project documentation are in English. The English release uses the version 12 character.
 
-基于 riba2534 的《鹈鹕骑单车》修改，保留原作 3D 海岸、鱼、音效和操作系统，主角改为指锅滑轮滑。
+## Original game
 
-原游戏：https://claude-opus-5-5.riba2534.cn/
+Adapted from riba2534's Pelican on a Bicycle, retaining the original 3D coast, fish, sounds and controls while replacing the rider with Zhiguo on inline skates.
 
-原源码：https://github.com/riba2534/claude-opus-5-5-demo/tree/main/pelican-bike
+- [Original game](https://claude-opus-5-5.riba2534.cn/)
+- [Original source](https://github.com/riba2534/claude-opus-5-5-demo/tree/main/pelican-bike)
 
-原 package.json 声明 ISC 许可。
-
-Three.js 与 lil-gui 的许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+The original `package.json` declares the ISC license. Three.js and lil-gui license text is included in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

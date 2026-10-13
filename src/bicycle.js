@@ -52,7 +52,7 @@ function wheel(m) {
   const g = new THREE.Group();
   const R = WHEEL_R;
   const tire = new THREE.Mesh(new THREE.TorusGeometry(R - 0.018, 0.018, 12, 72), m.tire);
-  // 奶油色胎壁
+  // Cream-colored tire sidewalls
   const wall = new THREE.Mesh(new THREE.TorusGeometry(R - 0.03, 0.0125, 8, 72), m.tan);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.04, 0.007, 8, 72), m.chrome);
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 14).rotateX(Math.PI / 2), m.chrome);
@@ -61,7 +61,7 @@ function wheel(m) {
   f1.position.z = 0.034;
   const f2 = f1.clone();
   f2.position.z = -0.034;
-  // 切向交叉编辐条，合并为一个网格
+  // Tangential cross-laced spokes merged into one mesh
   const spokes = [];
   const N = 28;
   const up = v3(0, 1, 0);
@@ -121,7 +121,7 @@ function gear(teeth, r, m) {
   return new THREE.Mesh(merged, m.chrome);
 }
 
-// 链条路径：大盘前侧圆弧 -> 下链 -> 飞轮后侧圆弧 -> 上链，顺时针即前进方向
+// Chain path: front chainring arc -> lower run -> rear sprocket arc -> upper run; clockwise moves forward
 function chainPath() {
   const c1 = new THREE.Vector2(P.bb.x, P.bb.y);
   const c2 = new THREE.Vector2(P.rearHub.x, P.rearHub.y);
@@ -152,7 +152,7 @@ function chainPath() {
   line(p1Bot, p2Bot, 40);
   arc(c2, r2, botA, topA, 24);
   line(p2Top, p1Top, 40);
-  // 累计弧长
+  // Cumulative arc length
   const cum = [0];
   for (let i = 1; i <= pts.length; i++) cum.push(cum[i - 1] + pts[i % pts.length].distanceTo(pts[i - 1]));
   return { pts, cum, length: cum[cum.length - 1] };
@@ -185,7 +185,7 @@ export function createBicycle() {
     return o;
   };
 
-  // ---- 车架 ----
+  // ---- Frame ----
   const axis = P.headTop.clone().sub(P.headBot).normalize();
   const ht0 = P.headTop.clone().addScaledVector(axis, 0.025);
   const ht1 = P.headBot.clone().addScaledVector(axis, -0.02);
@@ -200,7 +200,7 @@ export function createBicycle() {
     drop.position.copy(P.rearHub).setZ(s * 0.052);
     add(drop);
   }
-  // 镀铬接头
+  // Chrome joints
   for (const p of [P.seat, ht0, ht1, P.headTop.clone().addScaledVector(axis, -0.02)]) {
     const lug = new THREE.Mesh(new THREE.SphereGeometry(0.024, 14, 10), m.chrome);
     lug.position.copy(p);
@@ -210,7 +210,7 @@ export function createBicycle() {
   bbShell.position.copy(P.bb);
   add(bbShell);
 
-  // 下管贴花
+  // Down-tube decal
   const decal = makeDecalTexture('PELICANO');
   const decalMat = new THREE.MeshStandardMaterial({ map: decal, transparent: true, roughness: 0.3, metalness: 0.2, polygonOffset: true, polygonOffsetFactor: -2 });
   const dtDir = P.headBot.clone().sub(P.bb);
@@ -226,7 +226,7 @@ export function createBicycle() {
   add(dr);
   add(dl);
 
-  // ---- 座椅（皮革 + 弹簧） ----
+  // ---- Saddle (leather and springs) ----
   const seatpost = add(cylBetween(P.seat, P.saddle.clone().add(v3(0.005, -0.02, 0)), 0.012, 0.012, m.chrome));
   seatpost.castShadow = true;
   const saddleGeo = new THREE.SphereGeometry(1, 32, 16);
@@ -256,12 +256,12 @@ export function createBicycle() {
     spring.position.copy(P.saddle).add(v3(-0.08, 0.005, s * 0.045));
     add(spring);
   }
-  // 尾灯
+  // Rear light
   const tail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.035, 0.03), m.tail);
   tail.position.copy(P.seat).add(v3(-0.025, 0.0, 0));
   add(tail);
 
-  // ---- 挡泥板 ----
+  // ---- Fenders ----
   const fender = (a0, len) => {
     const g = new THREE.CylinderGeometry(WHEEL_R + 0.022, WHEEL_R + 0.022, 0.055, 40, 1, true, a0, len);
     g.rotateX(Math.PI / 2);
@@ -274,7 +274,7 @@ export function createBicycle() {
   rearFender.position.copy(P.rearHub);
   add(rearFender);
 
-  // ---- 后轮 + 飞轮 ----
+  // ---- Rear wheel and sprocket ----
   const rear = wheel(m);
   rear.group.position.copy(P.rearHub);
   add(rear.group);
@@ -286,7 +286,7 @@ export function createBicycle() {
   derailleur.rotation.z = 0.3;
   add(derailleur);
 
-  // ---- 牙盘与曲柄 ----
+  // ---- Chainring and cranks ----
   const crank = new THREE.Group();
   crank.position.copy(P.bb);
   add(crank);
@@ -328,7 +328,7 @@ export function createBicycle() {
   const pedalR = makePedal(1);
   const pedalL = makePedal(-1);
 
-  // ---- 链条（实例化链节）----
+  // ---- Chain (instanced links)----
   const path = chainPath();
   const LINK = 0.0127;
   const nLinks = Math.floor(path.length / LINK);
@@ -345,12 +345,12 @@ export function createBicycle() {
   const _one = v3(1, 1, 1);
   const _pos = new THREE.Vector3();
 
-  // ---- 转向组件（绕头管轴旋转）----
+  // ---- Steering assembly rotates about the head-tube axis----
   const steer = new THREE.Group();
   steer.position.copy(P.headBot);
   add(steer);
   const local = (p) => p.clone().sub(P.headBot);
-  // 前叉
+  // Front fork
   for (const s of [-1, 1]) {
     const pts = [
       local(P.headBot.clone().addScaledVector(axis, -0.02)).setZ(s * 0.03),
@@ -366,14 +366,14 @@ export function createBicycle() {
   crown.position.copy(local(P.headBot.clone().addScaledVector(axis, -0.03)));
   crown.rotation.z = Math.atan2(axis.y, axis.x) - Math.PI / 2;
   steer.add(crown);
-  // 前轮
+  // Front wheel
   const front = wheel(m);
   front.group.position.copy(local(P.frontHub));
   steer.add(front.group);
   const frontFender = fender(Math.PI * 0.5, Math.PI * 0.72);
   frontFender.position.copy(local(P.frontHub));
   steer.add(frontFender);
-  // 把立 + 车把
+  // Stem and handlebars
   const stemBase = P.headTop.clone().addScaledVector(axis, 0.02);
   const stemTop = P.headTop.clone().addScaledVector(axis, 0.1);
   const barC = stemTop.clone().add(v3(0.04, 0.012, 0));
@@ -400,7 +400,7 @@ export function createBicycle() {
     steer.add(anchor);
     grips[s > 0 ? 'R' : 'L'] = anchor;
   }
-  // 车铃（可点击）
+  // Clickable bicycle bell
   const bell = new THREE.Group();
   const dome = new THREE.Mesh(new THREE.SphereGeometry(0.026, 20, 10, 0, TAU, 0, Math.PI / 2), m.chrome);
   dome.name = 'bell';
@@ -409,7 +409,7 @@ export function createBicycle() {
   bell.add(dome, lever);
   bell.position.copy(local(v3(0.318, 0.862, -0.085)));
   steer.add(bell);
-  // 车前灯
+  // Front light
   const lamp = new THREE.Group();
   const lampBody = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.026, 0.055, 18).rotateZ(Math.PI / 2), m.chrome);
   const lens = new THREE.Mesh(new THREE.CircleGeometry(0.026, 18).rotateY(Math.PI / 2), m.lens);
@@ -423,7 +423,7 @@ export function createBicycle() {
   hlTarget.position.copy(headlight.position).add(v3(5, -0.9, 0));
   steer.add(headlight, hlTarget);
   headlight.target = hlTarget;
-  // 藤编车篮 + 鱼
+  // Wicker basket and fish
   const basket = new THREE.Group();
   const wicker = makeWickerTexture();
   wicker.repeat.set(6, 1.2);
@@ -451,7 +451,7 @@ export function createBicycle() {
   const rack = cylBetween(local(v3(0.44, 0.66, 0)), local(v3(0.5, 0.71, 0)), 0.006, 0.006, m.chrome);
   steer.add(rack);
 
-  // ---- 每帧更新 ----
+  // ---- Per-frame update ----
   const state = { wheelAngle: 0, crankAngle: 0, chainTravel: 0 };
   function update({ wheelAngle, crankAngle, steerAngle, speed, night }) {
     state.wheelAngle = wheelAngle;
@@ -459,7 +459,7 @@ export function createBicycle() {
     rear.rot.rotation.z = -wheelAngle;
     front.rot.rotation.z = -wheelAngle;
     crank.rotation.z = -crankAngle;
-    // 链条行程 = 大盘转过的弧长
+    // Chain travel equals the arc traveled by the chainring
     const travel = crankAngle * RING_R;
     cog.rotation.z = -travel / COG_R;
     for (let i = 0; i < nLinks; i++) {
@@ -470,14 +470,14 @@ export function createBicycle() {
       chain.setMatrixAt(i, _cm);
     }
     chain.instanceMatrix.needsUpdate = true;
-    // 脚踏保持水平
+    // Keep pedals level
     pedalR.position.set(P.bb.x + Math.cos(-crankAngle) * CRANK, P.bb.y + Math.sin(-crankAngle) * CRANK, 0.125);
     pedalL.position.set(P.bb.x - Math.cos(-crankAngle) * CRANK, P.bb.y - Math.sin(-crankAngle) * CRANK, -0.125);
     steer.quaternion.setFromAxisAngle(axis, steerAngle);
-    // 辐条运动模糊
+    // Spoke motion blur
     const blurO = Math.min(0.42, Math.max(0, (speed - 2.5) * 0.05));
     rear.blurMat.opacity = front.blurMat.opacity = blurO;
-    // 灯光
+    // Lighting
     const n = night;
     headlight.intensity = n * 9;
     m.lens.emissiveIntensity = 0.3 + n * 7;

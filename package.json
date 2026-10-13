@@ -1,7 +1,7 @@
 {
   "name": "zhiguo-run",
   "version": "1.0.0",
-  "description": "指锅快跑：海岸轮滑抓鱼游戏，可部署到 GitHub Pages。",
+  "description": "Zhiguo Roller Run: a coastal skating and fish-catching game for GitHub Pages.",
   "main": "index.js",
   "scripts": {
     "build": "node build.mjs",

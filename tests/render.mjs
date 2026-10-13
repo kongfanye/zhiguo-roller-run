@@ -4,7 +4,7 @@ import {readFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
 import assert from 'node:assert/strict';
 
-const root=resolve('docs'),output=resolve('../character-v11-checks');mkdirSync(output,{recursive:true});
+const root=resolve('docs'),output=resolve('../english-checks');mkdirSync(output,{recursive:true});
 const server=createServer((req,res)=>{
   if(req.url==='/favicon.ico'){res.writeHead(204);res.end();return;}
   const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
@@ -35,19 +35,19 @@ try{
     await page.locator('#stage').screenshot({path:`${output}/${frame}.png`});
   }
   await page.evaluate(()=>{const p=window.__characterPreview;p.view(1,'full',true);p.state.paused=false;});
-  await page.getByRole('button',{name:'平衡',exact:true}).click();await page.waitForTimeout(2500);
+  await page.getByRole('button',{name:'Balance',exact:true}).click();await page.waitForTimeout(2500);
   assert.equal(await page.evaluate(()=>window.__characterPreview.character.state.gait.mode),'balance');
-  await page.getByRole('button',{name:'轮滑',exact:true}).click();await page.waitForTimeout(1600);
+  await page.getByRole('button',{name:'Skating',exact:true}).click();await page.waitForTimeout(1600);
   assert.equal(await page.evaluate(()=>window.__characterPreview.character.state.gait.mode),'stride');
-  await page.getByRole('button',{name:'滑行',exact:true}).click();await page.waitForTimeout(2300);
+  await page.getByRole('button',{name:'Glide',exact:true}).click();await page.waitForTimeout(2300);
   assert.equal(await page.evaluate(()=>window.__characterPreview.character.state.gait.mode),'coast');
-  await page.getByRole('button',{name:'跳跃',exact:true}).click();await page.waitForFunction(()=>window.__characterPreview.ctx.airborne);
+  await page.getByRole('button',{name:'Jump',exact:true}).click();await page.waitForFunction(()=>window.__characterPreview.ctx.airborne);
   assert.equal(await page.evaluate(()=>window.__characterPreview.character.state.gait.mode),'jump');
   await page.waitForFunction(()=>window.__characterPreview.ctx.airHeight>.25);
-  await page.getByRole('button',{name:'平衡',exact:true}).click();
+  await page.getByRole('button',{name:'Balance',exact:true}).click();
   assert(await page.evaluate(()=>window.__characterPreview.ctx.airborne),'Changing motion mid-jump must preserve the current jump');
   await page.waitForFunction(()=>!window.__characterPreview.ctx.airborne);
-  await page.getByRole('button',{name:'轮滑',exact:true}).click();await page.waitForTimeout(800);
+  await page.getByRole('button',{name:'Skating',exact:true}).click();await page.waitForTimeout(800);
   const renderStats=await page.evaluate(()=>{const p=window.__characterPreview;return {triangles:p.renderer.info.render.triangles,calls:p.renderer.info.render.calls,width:p.renderer.domElement.width,height:p.renderer.domElement.height,loadError:p.character.state.error};});
   if(process.argv.includes('--animation')){
     mkdirSync(output+'/frames',{recursive:true});

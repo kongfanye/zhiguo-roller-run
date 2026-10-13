@@ -4,7 +4,7 @@ import { SKY, SKY_GLSL, NOISE_CHUNK } from './sky.js';
 export const SEA_LEVEL = -1.6;
 export const SHORE_Z = -14.6;
 
-// 与着色器一致的波浪参数：方向、陡度、波长、速度倍率
+// Wave parameters match the shader: direction, steepness, wavelength and speed multiplier
 export const WAVES = [
   [0.18, 1.0, 0.2, 21.0, 1.0],
   [-0.45, 1.0, 0.17, 12.5, 1.0],
@@ -24,7 +24,7 @@ varying float vHeight;
 varying vec2 vWP;
 
 const float SHORE = ${SHORE_Z.toFixed(2)};
-// 相位 = k·(d.x·行驶距离) - k·c·t 在 JS 中以双精度取模后传入，避免长距离后浮点跳变
+// Phase = k*(d.x*travelDistance) - k*c*t; reduce modulo in double-precision JS before passing to the shader to avoid long-distance precision jumps
 vec3 gerstner(vec2 p, vec2 dir, float steep, float wl, float phase, float amp, inout vec3 tangent, inout vec3 binormal) {
   float k = 6.28318 / wl;
   vec2 d = normalize(dir);
@@ -74,7 +74,7 @@ const float SHORE = ${SHORE_Z.toFixed(2)};
 void main() {
   vec3 N = normalize(vNormal);
   float dist = length(vWorld - cameraPosition);
-  // 细节法线：两层滚动噪声的有限差分
+  // Detail normals from finite differences of two scrolling noise layers
   vec2 q = vWP * 0.55;
   float e = 0.35;
   vec2 f1 = vec2(0.35, 0.6) * uTime;
@@ -95,7 +95,7 @@ void main() {
 
   float depthF = smoothstep(SHORE - 2.0, SHORE - 45.0, vWorld.z);
   vec3 water = mix(uShallow, uDeep, depthF) * (0.12 + 0.88 * uDayLight);
-  // 浪尖透光
+  // Light transmission through wave crests
   float sss = pow(max(dot(V, -uSunDir), 0.0), 3.0) * clamp(vHeight + 0.3, 0.0, 1.5);
   water += uShallow * uSunColor * sss * 0.35 * (1.0 - uNight);
 
@@ -105,7 +105,7 @@ void main() {
   float rm = max(dot(R, uMoonDir), 0.0);
   col += vec3(0.75, 0.82, 1.0) * (pow(rm, 250.0) * 2.2 + pow(rm, 30.0) * 0.06) * uNight;
 
-  // 浪尖白沫 + 岸边碎浪
+  // Crest foam and shore breaks
   float fn = vnoise(vWP * 1.3 + uTime * 0.4) * 0.6 + vnoise(vWP * 4.0 - uTime * 0.3) * 0.4;
   float crest = smoothstep(0.62, 1.05, vHeight + fn * 0.35) * smoothstep(-8.0, -40.0, vWorld.z);
   float shoreLine = SHORE + 0.9 * sin(vWP.x * 0.045) + 0.5 * sin(vWP.x * 0.13 + 1.7);
@@ -117,11 +117,11 @@ void main() {
   vec3 foamCol = mix(vec3(0.06, 0.08, 0.12), vec3(0.95, 0.97, 1.0), uDayLight) * (0.6 + 0.4 * uSunGlow);
   col = mix(col, foamCol, foam * 0.85);
 
-  // 路灯倒影（夜间暖色光带）
+  // Streetlight reflections (warm bands at night)
   float lampRow = pow(max(0.0, 1.0 - abs(fract((vWP.x - 12.0) / 36.0 + 0.5) - 0.5) * 7.0), 2.0);
   col += uLampColor * lampRow * smoothstep(-40.0, -14.0, vWorld.z) * uNight * 0.25 * (0.5 + 0.5 * fn);
 
-  // 大气雾 -> 与天空地平线颜色融合
+  // Atmospheric fog blends into the sky horizon color
   float fogF = 1.0 - exp(-pow(dist * uFogDensity, 1.35));
   vec3 fd = vWorld - cameraPosition;
   vec3 fogCol = skyBase(normalize(vec3(fd.x, max(fd.y * 0.02, 0.0) + 0.004, fd.z)));
@@ -147,7 +147,7 @@ export function createOcean() {
     vertexShader: oceanVert,
     fragmentShader: oceanFrag,
   });
-  // 近处密、远处疏的网格
+  // Dense mesh nearby, sparse mesh in the distance
   const xs = [];
   for (let x = -260; x <= 420; x += x > -60 && x < 120 ? 1.2 : 4) xs.push(x);
   const zs = [];
@@ -173,7 +173,7 @@ export function createOcean() {
   return { mesh, uniforms };
 }
 
-// 每帧在 JS 中以双精度计算各波相位（distance 为行驶距离，t 为时间）
+// Compute each wave phase per frame in double-precision JS; distance is travel distance and t is time
 export function wavePhases(distance, t, out) {
   WAVES.forEach((w, i) => {
     const k = (2 * Math.PI) / w[3];
@@ -185,7 +185,7 @@ export function wavePhases(distance, t, out) {
   return out;
 }
 
-// CPU 版本波高（船只、跃出的鱼使用），x 为绝对世界坐标
+// CPU wave height for boats and leaping fish; x is an absolute world coordinate
 export function waveHeight(x, z, t, amp = 1) {
   const off = Math.min(1, Math.max(0, (SHORE_Z + 1 - z) / 31));
   const a0 = amp * (0.35 + 0.65 * off * off * (3 - 2 * off));

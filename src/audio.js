@@ -1,4 +1,4 @@
-// 纯 WebAudio 合成：无任何音频文件
+// Pure Web Audio synthesis; no audio files
 const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 export class AudioEngine {
@@ -28,7 +28,7 @@ export class AudioEngine {
     comp.ratio.value = 3;
     this.master.connect(comp).connect(ctx.destination);
 
-    // 混响总线
+    // Reverb bus
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = this.impulse(2.8, 2.2);
     this.reverbGain = ctx.createGain();
@@ -48,7 +48,7 @@ export class AudioEngine {
     this.noise = this.noiseBuffer();
     this.brown = this.brownBuffer();
 
-    // 风声
+    // Wind sound
     this.wind = this.loop(this.noise);
     this.windFilter = ctx.createBiquadFilter();
     this.windFilter.type = 'bandpass';
@@ -57,7 +57,7 @@ export class AudioEngine {
     this.windGain.gain.value = 0;
     this.wind.connect(this.windFilter).connect(this.windGain).connect(this.sfx);
 
-    // 胎噪
+    // Tire noise
     this.roll = this.loop(this.brown);
     this.rollFilter = ctx.createBiquadFilter();
     this.rollFilter.type = 'lowpass';
@@ -66,7 +66,7 @@ export class AudioEngine {
     this.rollGain.gain.value = 0;
     this.roll.connect(this.rollFilter).connect(this.rollGain).connect(this.sfx);
 
-    // 海浪（左侧）+ 慢速 LFO
+    // Ocean waves (left channel) and a slow LFO
     this.surf = this.loop(this.brown);
     const surfF = ctx.createBiquadFilter();
     surfF.type = 'lowpass';
@@ -85,7 +85,7 @@ export class AudioEngine {
 
     this.nextTick = 0;
     this.enabled = true;
-    // 音乐调度
+    // Music scheduler
     this.step = 0;
     this.nextNote = ctx.currentTime + 0.3;
     this.timer = setInterval(() => this.schedule(), 25);
@@ -158,7 +158,7 @@ export class AudioEngine {
     this.windFilter.frequency.setTargetAtTime(250 + v * 70, t, 0.2);
     this.rollGain.gain.setTargetAtTime(p.airborne ? 0 : Math.min(0.35, v * 0.028), t, 0.05);
     this.rollFilter.frequency.setTargetAtTime(160 + v * 22, t, 0.2);
-    // 滑行时的飞轮棘轮声
+    // Freewheel ratchet sound while coasting
     if (!p.pedaling && v > 0.5 && t > this.nextTick) {
       this.click(t, 0.05);
       this.nextTick = t + Math.max(0.012, 0.35 / v);
@@ -255,7 +255,7 @@ export class AudioEngine {
     const t = this.ctx.currentTime;
     this.tone({ freq: 420, glide: 90, t, dur: 0.18, vol: 0.35 });
     this.tone({ freq: 260, glide: 70, t: t + 0.12, dur: 0.2, vol: 0.25 });
-    // 收集音：五声音阶上行琶音
+    // Collection sound: ascending pentatonic arpeggio
     const notes = golden ? [79, 83, 86, 91, 95] : [76, 81, 88];
     notes.forEach((n, i) => {
       const g = this.tone({ freq: midi(n), t: t + 0.05 + i * 0.07, dur: 0.6, vol: 0.12, type: 'triangle' });
@@ -338,13 +338,13 @@ export class AudioEngine {
     }
   }
 
-  // ------- 生成式音乐：速度跟随踏频 -------
+  // ------- Generative music follows cadence -------
   schedule() {
     if (!this.enabled || !this.musicOn) return;
     const ctx = this.ctx;
     const bpm = Math.min(126, Math.max(72, this.params.cadence || 84));
     const sixteenth = 60 / bpm / 4;
-    // 音乐关闭/后台期间不补发积压的音符
+    // Do not replay queued notes after music was disabled or the app was in the background
     if (this.nextNote < ctx.currentTime) this.nextNote = ctx.currentTime + 0.05;
     while (this.nextNote < ctx.currentTime + 0.12) {
       this.playStep(this.step, this.nextNote, sixteenth);
@@ -356,7 +356,7 @@ export class AudioEngine {
 
   playStep(step, t, dur) {
     const night = this.params.night;
-    // D 大调：Dmaj9 - Bm9 - Gmaj9 - A13
+    // D major: Dmaj9 - Bm9 - Gmaj9 - A13
     const chords = [
       [50, 57, 61, 64, 66],
       [47, 54, 57, 61, 62],
@@ -368,7 +368,7 @@ export class AudioEngine {
     const ch = chords[bar];
     const bus = this.musicBus;
     if (s === 0) {
-      // 柔和铺底和弦
+      // Soft sustained chords
       ch.forEach((n, i) => {
         const g = this.tone({ freq: midi(n + 12), type: 'triangle', t, dur: dur * 16, vol: 0.045, attack: 0.4, dest: bus, detune: (i % 2 ? 6 : -6) });
         void g;
@@ -376,7 +376,7 @@ export class AudioEngine {
       this.tone({ freq: midi(ch[0] - 12), type: 'sine', t, dur: dur * 8, vol: 0.16, attack: 0.02, dest: bus });
     }
     if (s === 8) this.tone({ freq: midi(ch[0] - 12 + (bar % 2 ? 7 : 0)), type: 'sine', t, dur: dur * 6, vol: 0.12, attack: 0.02, dest: bus });
-    // 拨弦琶音
+    // Plucked arpeggio
     const pattern = [0, 2, 3, 4, 1, 3, 2, 4];
     if (s % 2 === 0) {
       const idx = pattern[(s / 2) % pattern.length];
@@ -385,8 +385,8 @@ export class AudioEngine {
       this.tone({ freq: midi(n), type: 'sine', t, dur: dur * 3.5, vol: 0.07 * (night > 0.5 ? 0.8 : 1), dest: bus });
       this.tone({ freq: midi(n) * 2.001, type: 'sine', t, dur: dur * 1.5, vol: 0.012, dest: bus });
     }
-    if (night > 0.6) return; // 夜晚只保留氛围
-    // 轻鼓
+    if (night > 0.6) return; // Keep only ambient sound at night
+    // Light percussion
     if (s === 0 || s === 10) {
       this.tone({ freq: 120, glide: 42, t, dur: 0.22, vol: 0.3, dest: bus });
     }

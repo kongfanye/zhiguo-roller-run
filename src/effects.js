@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clamp, lerp, mulberry32, TAU } from './util.js';
 
-// ---------- 通用点粒子 ----------
+// ---------- General point particles ----------
 export class Particles {
   constructor(scene, max, { additive = false, sizeScale = 1, opacity = 1 } = {}) {
     this.opacity = opacity;
@@ -81,7 +81,7 @@ export class Particles {
   }
 }
 
-// ---------- 彩纸（实例化小纸片） ----------
+// ---------- Confetti (instanced paper pieces) ----------
 export class Confetti {
   constructor(scene, count = 220) {
     this.count = count;
@@ -149,7 +149,7 @@ export class Confetti {
   }
 }
 
-// ---------- 速度线（挂在相机上） ----------
+// ---------- Speed lines attached to the camera ----------
 export class SpeedLines {
   constructor(camera, count = 70) {
     this.count = count;
@@ -185,7 +185,7 @@ export class SpeedLines {
   }
 }
 
-// ---------- Verlet 布料：红色围巾 ----------
+// ---------- Verlet cloth: red scarf ----------
 export class Scarf {
   constructor(scene, segments = 16, width = 0.075, segLen = 0.045) {
     this.n = segments;
@@ -234,9 +234,9 @@ export class Scarf {
     this.init = true;
   }
 
-  // a/b：围巾根部两端（世界坐标）；wind：相对空气速度；collider：身体球
+  // a/b: scarf root endpoints in world coordinates; wind: relative air velocity; collider: body sphere
   update(dt, a, b, wind, t, collider) {
-    // 模拟若因异常输入发散，直接重置
+    // Reset if invalid input makes the simulation diverge
     if (this.init && !Number.isFinite(this.p[this.p.length - 1] + this.p[this.p.length - 2])) this.init = false;
     if (!this.init) this.reset(a, b);
     const P = this.p;
@@ -264,7 +264,7 @@ export class Scarf {
           P[j + 2] += vz * 0.985 + az * h * h;
         }
       }
-      // 固定根部
+      // Pin the root
       for (let k = 0; k < 2; k++) {
         const src = k ? b : a;
         P[k * 3] = src.x;

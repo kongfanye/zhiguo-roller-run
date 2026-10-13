@@ -27,7 +27,7 @@ function fbm2(x, z, oct, seed = 0) {
   return s;
 }
 
-// 地形高度：z>0 山丘，z<0 沙滩渐入海
+// Terrain height: hills at z>0; beach slopes into the sea at z<0
 export function terrainHeight(x, z) {
   if (z >= 0) {
     const t = smoothstep(3.8, 28, z);
@@ -80,7 +80,7 @@ function terrainColor(x, z, h, n, out) {
   return out;
 }
 
-// 非均匀的 z 采样：近路密，远处疏
+// Nonuniform z sampling: dense near the road, sparse farther away
 function terrainZs() {
   const zs = [];
   for (let z = -34; z < -16; z += 2) zs.push(z);
@@ -108,7 +108,7 @@ function buildTerrainGeometry() {
     for (let i = 0; i < nx - 1; i++) {
       const a = j * nx + i;
       const b = a + nx;
-      // z 递增：保证正面朝上
+      // Increasing z keeps the front face upward
       idx.push(a, b, a + 1, b, b + 1, a + 1);
     }
   }
@@ -119,7 +119,7 @@ function buildTerrainGeometry() {
 
 const _n = new THREE.Vector3();
 const _c = new THREE.Color();
-// 先算高度网格（含左右各一列外扩），法线用邻格中心差分，避免重复采样噪声
+// Compute a height grid with an extra column on both sides; derive normals by central differences to avoid repeated noise sampling
 function fillTerrain(g, x0) {
   const { xs, zs } = g.userData;
   const nx = xs.length;
@@ -169,7 +169,7 @@ function fillTerrain(g, x0) {
   g.computeBoundingSphere();
 }
 
-// ---------------- 植被与道具几何 ----------------
+// ---------------- Vegetation and prop geometry ----------------
 function jitter(geo, amt, seed) {
   const r = mulberry32(seed);
   const p = geo.attributes.position;
@@ -222,13 +222,13 @@ function pineGeometry() {
 
 function palmGeometry() {
   const parts = [];
-  // 弯曲树干
+  // Curved trunk
   const tube = new DynamicTube(18, 8, (t) => lerp(0.2, 0.12, t) * (1 + 0.12 * Math.max(0, Math.sin(t * 60))));
   const top = v3(1.1, 5.6, 0.2);
   tube.update([v3(0, 0, 0), v3(0.15, 1.8, 0), v3(0.55, 3.8, 0.1), top]);
   const tg = tube.geometry.clone();
   parts.push(paint(normalizeForMerge(tg), '#8a6a45'));
-  // 树冠叶片
+  // Canopy leaves
   const fronds = 9;
   for (let i = 0; i < fronds; i++) {
     const ang = (i / fronds) * TAU + (i % 2) * 0.2;
@@ -268,7 +268,7 @@ function umbrellaGeometry() {
   parts.push(paint(normalizeForMerge(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 6).translate(0, 1.1, 0)), '#dddddd'));
   const cone = new THREE.ConeGeometry(1.25, 0.45, 12, 1, true).toNonIndexed();
   cone.translate(0, 2.2, 0);
-  // 每个扇区交替条纹
+  // Alternate stripes per sector
   const pos = cone.attributes.position;
   const col = new Float32Array(pos.count * 3);
   const a = C('#ffffff');
@@ -288,7 +288,7 @@ function umbrellaGeometry() {
   return mergeGeometries(parts);
 }
 
-// 共享的静态结构：护栏、人行道、路灯（每个分块相同）
+// Shared static structures: railings, sidewalks and streetlights, identical in each chunk
 function guardrailGeometry() {
   const parts = [];
   for (let x = 0; x < CHUNK; x += 2.4) {
@@ -296,7 +296,7 @@ function guardrailGeometry() {
   }
   parts.push(paint(normalizeForMerge(new THREE.BoxGeometry(CHUNK, 0.07, 0.04).translate(CHUNK / 2, 0.74, -3.0)), '#d9dcdf'));
   parts.push(paint(normalizeForMerge(new THREE.BoxGeometry(CHUNK, 0.05, 0.04).translate(CHUNK / 2, 0.42, -3.0)), '#d9dcdf'));
-  // 路缘石
+  // Curb
   parts.push(paint(normalizeForMerge(new THREE.BoxGeometry(CHUNK, 0.1, 0.25).translate(CHUNK / 2, 0.02, -2.82)), '#bdb8ae'));
   parts.push(paint(normalizeForMerge(new THREE.BoxGeometry(CHUNK, 0.16, 1.0).translate(CHUNK / 2, 0.06, 3.3)), '#c9c3b8'));
   parts.push(paint(normalizeForMerge(new THREE.BoxGeometry(CHUNK, 0.18, 0.12).translate(CHUNK / 2, 0.07, 2.82)), '#e6e1d6'));
@@ -344,7 +344,7 @@ function signGeometry() {
   return post;
 }
 
-// ---------------- 世界 ----------------
+// ---------------- World ----------------
 export function createWorld(scene, opts) {
   const group = new THREE.Group();
   scene.add(group);
@@ -386,7 +386,7 @@ export function createWorld(scene, opts) {
     depthWrite: false,
   });
 
-  // 风吹摇摆（实例化植被）
+  // Wind sway for instanced vegetation
   const addSway = (mat, amount, start) => {
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = time;
@@ -522,7 +522,7 @@ export function createWorld(scene, opts) {
     place('palm', MAX.palm, -5.2, -11.5, 0.8, 1.1, (x) => Math.abs(x - 30) > 2);
     place('rock', MAX.rock, -30, 60, 0.3, 1.1, (x, z) => Math.abs(z) > 4.5 && (z < -12 || z > 5));
     place('umb', rnd() < 0.7 ? 2 : 0, -7, -11, 0.9, 1.05);
-    // 棕榈统一朝海倾斜
+    // Lean all palms toward the sea
     const pm = ch.inst.palm;
     for (let i = 0; i < pm.count; i++) {
       pm.getMatrixAt(i, _m);
@@ -534,7 +534,7 @@ export function createWorld(scene, opts) {
       pm.setMatrixAt(i, _m);
     }
     pm.instanceMatrix.needsUpdate = true;
-    // 遮阳伞颜色更饱和
+    // More saturated parasol colors
     const um = ch.inst.umb;
     for (let i = 0; i < um.count; i++) {
       tint.setHSL(rnd(), 0.7, 0.62);
@@ -547,7 +547,7 @@ export function createWorld(scene, opts) {
     if (showSign) ch.plate.material = signMats[Math.abs(Math.floor(index / 2)) % signMats.length];
   }
 
-  // ---------- 灯塔小岛 ----------
+  // ---------- Lighthouse island ----------
   const lighthouse = new THREE.Group();
   {
     const island = jitter(new THREE.ConeGeometry(16, 7, 14, 3), 1.6, 5);
@@ -574,7 +574,7 @@ export function createWorld(scene, opts) {
     lantern.position.y = 18.5;
     const cap = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.4, 16), new THREE.MeshStandardMaterial({ color: '#b3261e', roughness: 0.5 }));
     cap.position.y = 20;
-    // 夜间旋转光束（加法混合的锥体）
+    // Rotating night beam using an additively blended cone
     const beamMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -601,7 +601,7 @@ export function createWorld(scene, opts) {
     scene.add(lighthouse);
   }
 
-  // ---------- 帆船 ----------
+  // ---------- Sailboats ----------
   const boats = [];
   {
     const hullGeo = loft({
@@ -650,7 +650,7 @@ export function createWorld(scene, opts) {
     }
   }
 
-  // ---------- 飞鸟：海鸥与鹈鹕编队（实例化） ----------
+  // ---------- Birds: instanced seagulls and pelican formations ----------
   function birdSet(count, { body, wing, wingMat, bodyMat, shoulder }) {
     const bodies = new THREE.InstancedMesh(body, bodyMat, count);
     const wl = new THREE.InstancedMesh(wing, wingMat, count);
@@ -676,7 +676,7 @@ export function createWorld(scene, opts) {
     sh.quadraticCurveTo(len * 0.4, -chord * 0.9, 0, -chord * 0.8);
     sh.closePath();
     const g = new THREE.ShapeGeometry(sh, 6);
-    g.rotateX(-Math.PI / 2); // 形状 Y -> -Z
+    g.rotateX(-Math.PI / 2); // Shape Y -> -Z
     const pos = g.attributes.position;
     const col = new Float32Array(pos.count * 3);
     const tc = C(tipColor);
@@ -687,7 +687,7 @@ export function createWorld(scene, opts) {
       col.set([c.r, c.g, c.b], i * 3);
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    // 翼展沿 +Z（右翼）
+    // Wingspan along +Z (right wing)
     g.rotateY(-Math.PI / 2);
     return g;
   };
@@ -720,7 +720,7 @@ export function createWorld(scene, opts) {
     _bs.setScalar(scale);
     _bm.compose(pos, _bq, _bs);
     set.bodies.setMatrixAt(i, _bm);
-    // 右翼（+Z）绕 X 轴拍打，左翼镜像
+    // Right wing (+Z) flaps around X; mirror the left wing
     _wq.setFromAxisAngle(_axisX, -flap);
     _lm.compose(_bp.set(0.02, 0.03, 0.05), _wq, _one);
     _wm.multiplyMatrices(_bm, _lm);
@@ -734,7 +734,7 @@ export function createWorld(scene, opts) {
   const _one = new THREE.Vector3(1, 1, 1);
   const _gp = new THREE.Vector3();
 
-  // ---------- 萤火虫（夜间） ----------
+  // ---------- Fireflies at night ----------
   const FF = 160;
   const ffGeo = new THREE.BufferGeometry();
   const ffPos = new Float32Array(FF * 3);
@@ -768,7 +768,7 @@ export function createWorld(scene, opts) {
 
   function update(distance, dt, t, env) {
     time.value = t;
-    // 分块回收
+    // Recycle chunks
     const base = Math.floor(distance / CHUNK) - 3;
     for (let k = 0; k < NCHUNK; k++) {
       const want = base + k;
@@ -781,7 +781,7 @@ export function createWorld(scene, opts) {
     bulbMat.emissiveIntensity = lerp(0.0, 6.0, smoothstep(0.15, 0.6, night));
     poolMat.opacity = smoothstep(0.2, 0.7, night) * 0.5;
 
-    // 灯塔
+    // Lighthouse
     const lp = 1600;
     lighthouse.position.x = ((((330 - distance + 420) % lp) + lp) % lp) - 420;
     const ud = lighthouse.userData;
@@ -789,7 +789,7 @@ export function createWorld(scene, opts) {
     ud.beamMat.uniforms.uNight.value = smoothstep(0.2, 0.8, night);
     ud.lantern.material.emissiveIntensity = lerp(0.4, 8, smoothstep(0.2, 0.7, night));
 
-    // 帆船随波起伏
+    // Sailboats bob with the waves
     for (const b of boats) {
       const u = b.userData;
       const ax = u.ax + t * u.drift;
@@ -804,7 +804,7 @@ export function createWorld(scene, opts) {
       b.rotation.x = -Math.atan2(hS - h, 1.2) * 0.8 + Math.sin(t * 0.8 + u.phase) * 0.04;
     }
 
-    // 海鸥：绕着骑手附近的海面盘旋
+    // Seagulls circle the sea near the rider
     for (let i = 0; i < gulls.count; i++) {
       const p = gulls.params[i];
       const a = t * p.w + p.ph;
@@ -818,7 +818,7 @@ export function createWorld(scene, opts) {
     }
     for (const m of [gulls.bodies, gulls.wl, gulls.wr]) m.instanceMatrix.needsUpdate = true;
 
-    // 鹈鹕 V 字编队，缓慢掠过海面
+    // Pelicans glide slowly above the sea in a V formation
     const fx = ((t * 3.2) % 560) - 260;
     for (let i = 0; i < 3; i++) {
       const off = i === 0 ? 0 : 2.6;
@@ -834,7 +834,7 @@ export function createWorld(scene, opts) {
   }
 
   function lampPositions(distance, out) {
-    // 返回离骑手最近的两盏路灯的位置（用于夜间动态点光源）
+    // Return the two streetlights nearest the rider for dynamic night lighting
     const period = 36;
     const base = Math.floor((distance - 12) / period) * period + 12;
     out[0].set(base - distance, 5.2, 1.95);

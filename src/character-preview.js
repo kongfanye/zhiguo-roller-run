@@ -16,7 +16,7 @@ const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.ShadowMat
 const character=createZhiguo();scene.add(character.root);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.1;controls.enablePan=false;controls.minDistance=.35;controls.maxDistance=7;controls.maxPolarAngle=Math.PI*.49;
 const state={paused:false,rate:1,mode:'stride',frame:'full',view:1,time:0,autoRotate:false,jumpElapsed:-1,jumpCooldown:.35};
-const labels=['正面','右前方','右侧面','右后方','背面','左后方','左侧面','左前方'];
+const labels=['Front','Front right','Right side','Back right','Back','Back left','Left side','Front left'];
 const ctx={speed:7.5,pedal:1,rhythm:2,lean:0,trick:0,airborne:false,airHeight:0,night:0};
 const targetPosition=new THREE.Vector3(),targetFocus=new THREE.Vector3();let blending=false;
 function view(index=state.view,frame=state.frame,instant=false){
@@ -30,19 +30,19 @@ function view(index=state.view,frame=state.frame,instant=false){
   if(instant){camera.position.copy(targetPosition);controls.target.copy(targetFocus);controls.update();}else blending=true;
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',+b.dataset.view===index));
   document.querySelectorAll('[data-frame]').forEach(b=>b.classList.toggle('active',b.dataset.frame===frame));
-  document.querySelector('#viewLabel').textContent=frame==='top'?'俯视':labels[index];
+  document.querySelector('#viewLabel').textContent=frame==='top'?'Top':labels[index];
 }
 document.querySelector('#views').addEventListener('click',e=>{if(e.target.dataset.view!==undefined){state.autoRotate=false;document.querySelector('#rotate').checked=false;view(+e.target.dataset.view);}});
 document.querySelector('#framing').addEventListener('click',e=>{if(e.target.dataset.frame)view(state.view,e.target.dataset.frame);});
 document.querySelector('#motion').addEventListener('click',e=>{if(!e.target.dataset.motion)return;state.mode=e.target.dataset.motion;state.time=0;document.querySelectorAll('[data-motion]').forEach(b=>b.classList.toggle('active',b.dataset.motion===state.mode));});
 document.querySelector('#rate').addEventListener('input',e=>{state.rate=+e.target.value;document.querySelector('#rateValue').value=state.rate.toFixed(2)+'×';});
 document.querySelector('#rotate').addEventListener('change',e=>{state.autoRotate=e.target.checked;});
-document.querySelector('#toggle').addEventListener('click',()=>{state.paused=!state.paused;document.querySelector('#toggle').textContent=state.paused?'播放动作':'暂停动作';});
+document.querySelector('#toggle').addEventListener('click',()=>{state.paused=!state.paused;document.querySelector('#toggle').textContent=state.paused?'Play animation':'Pause animation';});
 controls.addEventListener('start',()=>{blending=false;state.autoRotate=false;document.querySelector('#rotate').checked=false;});
 function resize(){const {width,height}=stage.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(stage);resize();view(1,'full',true);
 character.ready.then(()=>{
-  document.querySelector('#status').textContent='人物已就绪';document.querySelector('#error').textContent=character.state.error??'';
+  document.querySelector('#status').textContent='Character ready';document.querySelector('#error').textContent=character.state.error??'';
   const image=character.upper.skull.material.userData.identityUniforms.uIdentity.value?.image;
   if(image)document.querySelector('#referenceImage').src=image.src;
 });

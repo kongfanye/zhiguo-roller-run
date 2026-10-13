@@ -3,7 +3,7 @@ import { createSkatingMotion } from './skating-motion.js';
 import { createSkaterLegs } from './skater-legs.js';
 import { createSkaterBody } from './skater-body.js';
 
-const DIRECTIONS=['正面','右前方','右侧面','右后方','背面','左后方','左侧面','左前方'];
+const DIRECTIONS=['Front','Front right','Right side','Back right','Back','Back left','Left side','Front left'];
 const TAU=Math.PI*2;
 
 export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-front.webp':__ZHIGUO_FACE_URL__}={}) {
@@ -26,7 +26,7 @@ export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'
     texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
     texture.minFilter=THREE.LinearMipmapLinearFilter;upper.setFaceTexture(texture);
     state.ready=true;upper.root.visible=legs.root.visible=true;
-  }).catch(()=>{state.error='面部贴图未加载，正在显示基础三维形象';state.ready=true;});
+  }).catch(()=>{state.error='Face texture could not load. Showing the base 3D character.';state.ready=true;});
   const cameraLocal=new THREE.Vector3();
   function orient(camera,hide=false) {
     if(camera){
