@@ -4,7 +4,8 @@ The source is assets/zhiguo-identity-v8.jpg, an unmodified copy of the user's
 photo. The face is resampled into the 3D head's coordinates at one uniform
 scale. The photographed wire rims (replaced by 3D rims) and loose forehead
 strands are filled from the surrounding skin, the hair-covered outer left
-cheek is mirrored from the clear right side, thin dark lines that would read
+cheek is mirrored from the clear right side and the shade on the rest of her
+left cheek is lifted to match it, thin dark lines that would read
 as scars are lifted from the skin, large-scale sunlight is evened out, and a
 feathered alpha channel blends the face into the 3D skin and hair.
 
@@ -171,6 +172,30 @@ def main():
     m = (smooth(-z, .030, .046) * (1 - keep))[..., None]
     image = image * (1 - m) + mirror(image, z) * m
     skin = skin | (m[..., 0] > .5)
+
+    #    The rest of her left cheek, the left side of her nose and the corner of
+    #    her mouth were in shade. That side is lifted to the lit right cheek's
+    #    tone using its own local average (~5 mm), so her skin detail stays and
+    #    the 3D lights add any shading. The nostril, lips and eye are left out
+    #    of the average, so they keep their natural contrast.
+    hold = blur(dilate(eyes | ellipse(z, y, .0069, -.0205, .0050, .0035) | ellipse(z, y, -.0179, -.0214, .0050, .0035)
+                       | ellipse(z, y, -.0017, -.0490, .0290, .0110), .0015, z, y).astype(np.float32), 3)
+    lit_side = skin & (z > .010) & (y > -.075) & (y < .0) & (hold < .05)
+    target = image[lit_side].mean(0)
+    # Sample every pixel of the face (shaded skin fails the skin color test).
+    sample = (1 - hold) * ellipse(z, y, -.002, -.004, .070, .100)
+    local = blur(image * sample[..., None], 12) / np.maximum(blur(sample, 12), 1e-3)[..., None]
+    shade = (smooth(-z, -.002, .005) * smooth(y, -.112, -.096) * (1 - smooth(y, .006, .014))
+             * (1 - blur(dilate(eyes, .0015, z, y).astype(np.float32), 3)))[..., None]
+    gain = np.clip(target / np.maximum(local, 1), 1, 2.2)
+    # A shadow lift only: pixels already as bright as lit skin (teeth,
+    # highlights) are left as they are.
+    brightness = (image @ np.array([.30, .59, .11], np.float32)) / (target @ np.array([.30, .59, .11], np.float32))
+    shade = shade * (1 - smooth(brightness, 1.0, 1.25))[..., None]
+    # The teeth keep their own color; the skin-tuned gain would tint them.
+    teeth = blur(dilate(ellipse(z, y, -.0017, -.0485, .0275, .0080), .0010, z, y).astype(np.float32), 2)
+    shade = shade * (1 - teeth)[..., None]
+    image = image * (1 + (gain - 1) * shade)
 
     # 4. Thin dark lines across the skin (stray hairs, creases and leftovers of
     #    the rims) read as scars on the 3D face. A morphological closing lifts

@@ -9,6 +9,7 @@ The user supplied five real photographs and an eight-view character sheet. The s
 - Removed the photographed wire rims, bridge and nose pads, which the 3D rims replace.
 - Smoothed loose strands from the bare forehead and brow area.
 - Mirrored the hair-covered outer left cheek and temple from the clear right side. The eyes, nose and smile are untouched.
+- Lifted the photo's shade on the rest of her left cheek, the left side of her nose and her jaw to the lit right cheek's tone. The lift uses each area's local average (about 5 mm), so skin detail stays; the 3D lights add their own shading. It applies only to shaded pixels, and the nostril, lips, teeth and eye are left out.
 - Lifted thin dark lines narrower than about 4 mm (stray hairs, sharp creases and rim traces) back to the surrounding skin with a per-channel morphological closing. On the 3D face these lines read as scars; broad shading such as the smile folds stays.
 - Painted soft arched brows just above the 3D rims. Her real brows are thin and sit on the photographed top rims, which were removed.
 - Sharpened only the eyes and smile.
