@@ -46,3 +46,40 @@ for(const phase of [0.25,0.75]){
   assert(phase===0.25?left>right:right>left,'Arms must alternate with weight transfer');
 }
 console.log('PASS: volumetric head/torso, shared pelvis, fixed arm lengths, attached anatomical skin/hands, coordinated swing and continuous upper-body joints.');
+
+// Her skating outfit: an open plaid shirt over a white tee and dark denim shorts.
+{
+  const body=createSkaterBody(),legs=createSkaterLegs(),motion=createSkatingMotion(),root=new THREE.Group();root.add(legs.root,body.root);
+  for(const part of [body.tee,body.shorts,body.shirt])assert(part?.isMesh,'Tee, shorts and shirt are all modelled');
+  const p=new THREE.Vector3(),toSpine=new THREE.Matrix4(),hip=new THREE.Vector3(),knee=new THREE.Vector3(),d=new THREE.Vector3();
+  let minGap=Infinity,worst=Infinity,maxLegStep=0,prior=null;
+  for(let n=0;n<1500;n++){
+    const ctx={speed:7.5,pedal:n<1200?1:0,rhythm:2,lean:.28*Math.sin(n/150),trick:n>500&&n<800?1:0,airborne:n>=1000&&n<1050,airHeight:n>=1000&&n<1050?.3*Math.sin((n-1000)/50*Math.PI):0};
+    const gait=motion.update(1/120,ctx);legs.pose(gait,ctx,1/120);body.pose(gait,ctx,1/120,legs.state);
+    const shirt=body.shirt.geometry.attributes.position;
+    body.root.updateMatrix();body.spine.updateMatrix();toSpine.multiplyMatrices(body.root.matrix,body.spine.matrix).invert();
+    for(const name of ['right','left']){
+      hip.fromArray(legs.state.joints[name].hip).applyMatrix4(toSpine);knee.fromArray(legs.state.joints[name].knee).applyMatrix4(toSpine);
+      d.subVectors(knee,hip);const len=d.length();d.divideScalar(len);
+      for(let i=0;i<shirt.count;i++){
+        p.fromBufferAttribute(shirt,i);if(p.y>.10)continue;
+        const s=THREE.MathUtils.clamp(p.clone().sub(hip).dot(d),0,len);
+        worst=Math.min(worst,p.distanceTo(hip.clone().addScaledVector(d,s))-(s<.17?.078:.056));
+      }
+    }
+    for(let i=0;i<shirt.count;i++){p.fromBufferAttribute(shirt,i);if(p.x>.06&&p.y<.44)minGap=Math.min(minGap,Math.abs(p.z));}
+    const points=[];
+    for(const leg of legs.legs){const a=leg.leg.geometry.attributes.position;for(let i=0;i<a.count;i+=37){p.fromBufferAttribute(a,i);assert(p.toArray().every(Number.isFinite));points.push(p.clone());}}
+    if(prior)for(let i=0;i<points.length;i++)maxLegStep=Math.max(maxLegStep,points[i].distanceTo(prior[i]));prior=points;
+  }
+  assert(minGap>.05,`The shirt hangs open at the front (${minGap})`);
+  assert(worst>-1e-4,`The shirt's hem never cuts into the thighs or shorts (${worst})`);
+  assert(maxLegStep<.03,`The skinned legs move continuously (${maxLegStep} m/frame at 120 Hz)`);
+  // Each skinned leg stays on its bones: no vertex strays from the hip-knee-ankle chain.
+  const seg=(q,a,b)=>{const ab=b.clone().sub(a),t=THREE.MathUtils.clamp(q.clone().sub(a).dot(ab)/ab.lengthSq(),0,1);return q.distanceTo(a.clone().addScaledVector(ab,t));};
+  for(const leg of legs.legs){
+    const j=legs.state.joints[leg.name],h=v(j.hip),k=v(j.knee),a=v(j.ankle),pos=leg.leg.geometry.attributes.position;
+    for(let i=0;i<pos.count;i+=5){p.fromBufferAttribute(pos,i);assert(Math.min(seg(p,h,k),seg(p,k,a))<.11,'Leg skin stays attached to the leg bones');}
+  }
+  console.log(`PASS: open plaid shirt (${(minGap*200).toFixed(1)} cm opening), hem clear of the thighs through skating, balance and jumps, and continuous skinned legs (${(maxLegStep*1000).toFixed(1)} mm/frame).`);
+}

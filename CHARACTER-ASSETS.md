@@ -1,5 +1,93 @@
 # Character and cover assets
 
+## Version 16: refinements from a review against her photos (2026-10-14)
+
+**Face (`tests/make-head-model.py`).** Her one expression stays her smile, now expressed through the shape as well as the texture:
+
+- The eyelid landmarks close slightly into crescents: lower lids rise about 10% of the opening, upper lids drop about 3%. Each eye region then opens 10% taller and 5% wider round its centre, as her eyes read small on the head.
+- The mouth corners are drawn in about 5%.
+- The apples of the cheeks lift 2.4 mm and the skin under the lower lids pushes up 1 mm.
+- The nose, chin and jaw are smoothed more than the eyes and lips, and the jaw returns to the neck over 1.6 cm instead of 1.1 cm. The open mouth is recessed only 2.6 mm.
+- The teeth are toned down and shaded by the lips, and the sun shadow under the nose and the nostrils is lifted.
+- The skin is evened at the patch scale. Above about 3 mm, the photo's cheek sheen, the haze inside the lenses and the shade round the eyes, nose and mouth are flattened and pulled to her skin hue; fine detail, eyes, lips and nostrils are untouched. This cuts patchiness, the spread of the 3–20 mm luminance band, from 0.082 to 0.025.
+- The skylight's blue cast on her shaded left cheek is pulled back to her skin hue. That cheek takes the broad colour of her lit right cheek from the same photo, keeping its own detail.
+- The brows are repainted just above the rims with a natural arch; the detector had put her brow landmarks on the rims.
+- The face no longer receives hard shadow-map shadows.
+- The lens outline keeps crisper corners, as on her hexagonal frames.
+
+**Hair (`src/zhiguo-hair.js`):**
+
+- 76 alpha-tested strand cards per side lie over the cap, from the part towards the braid roots, so the outline breaks into locks with feathered tips.
+- Each half starts just off the middle, so a fine line of scalp shows along the part.
+- There are broken hairs along the forehead hairline, two strands falling across the forehead, curtain strands close beside her cheeks, wisps in front of the ears and a soft nape hairline.
+- The braids are thinner, with crossings that vary in spacing and fullness, flyaways along their length and feathered ends below the ties.
+- The hair over the ears and braid roots sits lower.
+
+**Body and outfit (`src/skater-body.js`, `src/arm-mesh.js`, `src/skater-legs.js`):**
+
+- The shirt has a softer, dropped shoulder. Sleeves are lofted each frame from an armhole on the shoulder to a rolled cuff on the upper arm; the armhole follows a quarter of the arm's swing.
+- The shirt hangs in folds that deepen towards a rippled hem, with diagonal folds below the armpits and light folds at the waist sides.
+- The plaid is re-woven from the photo: a sand ground, periwinkle bands and a near-black grid line.
+- The arm and hand mesh is Loop-subdivided once with its skinning weights. The elbow and wrist weights are smoothed, and the shoulder cap under the shirt is slimmed slightly.
+- Fingers are relaxed out of the exported grip by rigid rotations at each joint, so every phalanx keeps its length.
+- The legs use a denser mesh. Wrap-around seams on the legs, shorts and tee have welded normals, so no shading line runs down their fronts.
+
+## Version 15: body and outfit from her skating photo (2026-10-14)
+
+The body and clothing are rebuilt from scratch from the user's real skating photo, the same photo the cover cutout comes from. The earlier outfit followed the eight-view sheet. All of it is procedural geometry with generated textures; no image is projected onto the body.
+
+**Body.** `src/skater-body.js` models a slim adult-female torso: hips, a narrow waist, the bust, narrow shoulders and a crew neck that closes round the measured neck. In `src/skater-legs.js` each leg is one continuous mesh from inside the shorts to inside the boot:
+
+- The leg has a thigh slightly wider than deep, a kneecap, a calf that bulges at the back and inside, and a flatter shin.
+- It is skinned across pelvis, thigh and shin frames, so the knee bends smoothly.
+- The arms and hands remain the MakeHuman meshes.
+
+**Outfit:**
+
+- **Shirt.** An oversized short-sleeve shirt in a cream, periwinkle, pale-blue, navy and tan check, worn open. It hangs straight from the bust to mid-thigh with a shirt-tail hem, and has rolled cuffs, a pointed collar, front edges and white buttons on her right. Each frame its lower panels are pushed outward from her body to clear the thighs and shorts.
+- **Tee.** A fitted white tee with a black ribbed crew neckband and a black print: "FREE" in bold serif capitals over a line of script and a small emblem.
+- **Shorts.** Very dark high-waisted denim shorts with a waistband, belt loops, a metal button and fly stitching. The legs are slightly A-line and end mid-thigh with light topstitching.
+- **Socks.** Thick white crew socks slouched in soft folds above the boot cuffs.
+- **Skates.** Black inline skates with a white lower shell trimmed in red, a buckled cuff strap and instep strap, a red logo tab, laces, a black frame and four cream wheels with dark hubs. The shells' inverted normals were corrected.
+
+The green flower pendant from the sheet is gone, since she wears none in the skating photo.
+
+## Version 14: head and hair modeled from her real appearance (2026-10-14)
+
+The head and hair are rebuilt from scratch; the earlier face projection, skull and hair are no longer used. She has one face, from one photograph, and one expression (her smile). Nothing swaps faces or expressions while she skates.
+
+**Measurement.** `tests/detect-face-landmarks.py` runs MediaPipe's FaceLandmarker on `assets/zhiguo-identity-v8.jpg`, the user's unmodified frontal portrait, and saves 478 landmarks (468 face and 10 iris points) with MediaPipe's canonical face mesh to `assets/zhiguo-face-landmarks.json`.
+
+**Shape.** `tests/make-head-model.py` aligns the landmarks to the canonical face, which undoes the portrait's 8° head turn, symmetrises them and scales them to a 62 mm pupil distance. The head is a radius field around a vertical axis:
+
+- A lightly regularised thin-plate spline through her landmarks forms the face (0.2 mm RMS from the measurements). The open mouth is recessed so the teeth sit behind the lips.
+- An adult-female cranium and neck form the rest: 22.3 cm chin to crown and 15 cm breadth.
+- The face/cranium difference is extended harmonically beyond the face outline, and the outer face is smoothed over about 4 mm, so there is no seam. The surface returns to the neck about 1 cm below her jaw line.
+
+The result is `src/zhiguo-head-model.js`.
+
+**Skin texture.** `assets/zhiguo-head-v14.webp` (1024 × 1024) uses the same azimuth/height layout as the mesh, and a thin-plate spline maps each texel to the portrait. Retouching is limited:
+
+- Removed the photographed wire rims, their sharpening halos and thin stray hairs by inpainting.
+- Completed the parts her hair hides in the photo (the outer half of her left eye, her left temple and cheek edge) from the mirror image of the same photo's visible side.
+- Evened out the low-frequency golden-hour shading and lifted the hard sun shadow under the nose, so the 3D lights do the shading.
+- White-balanced to her skin tone `#d6a38c`, checked against her indoor skating photo and the portrait's teeth. The neck, arms and legs use the same colour.
+- Faded to plain skin beyond the clean part of the photo, and repainted soft brows on the measured brow landmarks, since her thin real brows sit on the removed top rims.
+
+No generative model was used.
+
+**Glasses.** The lens outline is traced over the photographed hexagonal frame and placed in 3D 1–1.4 cm in front of her eyes. The frame has a high bridge, nose pads and temple arms that run back into her hair. The thin wires cast no shadows, because aliased wire shadows read as scars on the skin.
+
+**Hair.** `src/zhiguo-hair.js` follows her braided photos:
+
+- A center part, with a cap whose strands run from the part to each braid root. It lies on the scalp at the hairline, lifts over the ears and has soft volume at the sides.
+- Four curtain locks per side frame her face from the part to the jaw.
+- Two loose three-strand braids start behind the ear lobes and hang over the front of her shoulders, with pink-and-white elastics and short tufts.
+- The hair is dark brown with an auburn tint, with a strand texture and anisotropic highlights along the strands.
+- The braids sway on a damped spring and slide over the shirt.
+
+The unused MakeHuman head data was removed from `src/anatomical-mesh.js`; only the arms and hands remain from it.
+
 ## Version 13: real-photo face and eight-view reference outfit (2026-10-13)
 
 The user supplied five real photographs and an eight-view character sheet. The sheet matches `assets/zhiguo-atlas-a.webp`.

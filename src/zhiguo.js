@@ -6,7 +6,7 @@ import { createSkaterBody } from './skater-body.js';
 const DIRECTIONS=['Front','Front right','Right side','Back right','Back','Back left','Left side','Front left'];
 const TAU=Math.PI*2;
 
-export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-face-photo-v13.webp':__ZHIGUO_FACE_URL__}={}) {
+export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-head-v14.webp':__ZHIGUO_FACE_URL__}={}) {
   const root=new THREE.Group();root.name='zhiguo-articulated-3d-skater';
   const upper=createSkaterBody(),legs=createSkaterLegs(),motion=createSkatingMotion();
   root.add(upper.root,legs.root);
@@ -38,7 +38,7 @@ export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'
     upper.root.visible=legs.root.visible=!hide;
   }
   function update(dt,ctx) {
-    const gait=motion.update(dt,ctx);legs.pose(gait,ctx,dt);upper.pose(gait,ctx,dt);
+    const gait=motion.update(dt,ctx);legs.pose(gait,ctx,dt);upper.pose(gait,ctx,dt,legs.state);
     state.phase=gait.phase;state.cadenceSpm=gait.cadenceSpm;state.gait=gait;
     state.cheer=Math.max(0,state.cheer-dt);state.collect=Math.max(0,state.collect-dt);
     shadow.scale.setScalar(ctx.airborne?0.65:1);shadowMaterial.opacity=ctx.airborne?0.4:0.85;

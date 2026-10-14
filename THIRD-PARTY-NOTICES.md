@@ -2,7 +2,7 @@
 
 ## MakeHuman core graphical assets
 
-The anatomical head, neck, arms and hands are derived from the MakeHuman hm08 core base mesh and its adult female shape target. These core graphical assets are released under CC0 1.0 Universal. The MakeHuman application's source code is not included.
+The anatomical arms and hands are derived from the MakeHuman hm08 core base mesh and its adult female shape target. These core graphical assets are released under CC0 1.0 Universal. The MakeHuman application's source code is not included.
 
 Source: https://github.com/makehumancommunity/makehuman/tree/master/makehuman/data
 

@@ -25,15 +25,15 @@ button{border:1px solid #d4dfe5;border-radius:8px;background:#fff;padding:10px;f
 <body>
 <main class="layout">
 <aside>
-<div class="eyebrow">ZHIGUO / CHARACTER STUDY 13</div><h1>Zhiguo · 3D Character</h1><p>Real-photo face · Twin plaits · Plaid shirt.<br>Rotate to inspect the hands and skating motion.</p>
-<details class="reference" open><summary>Face texture from the real photo</summary><div class="reference-photo"><img id="referenceImage" alt="Zhiguo's face texture, taken from her real photograph"></div><div class="reference-caption">Compare the eyes, glasses and smile</div></details>
+<div class="eyebrow">ZHIGUO / CHARACTER STUDY 16</div><h1>Zhiguo · 3D Character</h1><p>Photo-measured head · Twin braids · Open plaid shirt over a FREE tee.<br>Rotate to inspect the hands and skating motion.</p>
+<details class="reference" open><summary>Head texture from her portrait</summary><div class="reference-photo"><img id="referenceImage" alt="Zhiguo's head texture, taken from her real photograph"></div><div class="reference-caption">Compare the eyes, glasses and smile</div></details>
 <div class="section"><span class="label">Viewing angle</span><div class="views" id="views">
 <button data-view="0">Front</button><button data-view="1" class="active">Front right</button><button data-view="2">Right side</button><button data-view="3">Back right</button><button data-view="4">Back</button><button data-view="5">Back left</button><button data-view="6">Left side</button><button data-view="7">Front left</button>
 </div></div>
 <div class="section"><span class="label">Framing</span><div class="modes" id="framing"><button data-frame="full" class="active">Full body</button><button data-frame="upper">Upper body</button><button data-frame="face">Face</button><button data-frame="top">Top</button></div></div>
 <div class="section motion"><span class="label">Motion preview</span><div class="modes" id="motion"><button data-motion="stride" class="active">Skating</button><button data-motion="coast">Glide</button><button data-motion="balance">Balance</button><button data-motion="jump">Jump</button></div><div class="range"><input id="rate" type="range" min=".25" max="1.5" value="1" step=".05" aria-label="Animation speed"><output id="rateValue">1.00×</output></div></div>
 <label class="check"><input id="rotate" type="checkbox">Auto-rotate</label><button id="toggle">Pause animation</button>
-<div class="note">Drag to rotate · Scroll to zoom<br>Twin braids / Relaxed hands / Five complete fingers<br>The face comes from her real photo. Plaits sway gently with movement.<div id="error" role="status"></div></div>
+<div class="note">Drag to rotate · Scroll to zoom<br>Twin braids / Relaxed hands / Five complete fingers<br>Her face is measured from her real photo. Braids sway gently with movement.<div id="error" role="status"></div></div>
 </aside>
 <section class="viewer" aria-label="Interactive 3D character preview"><div id="stage"></div><div class="topline"><span class="badge">Real-time 3D · Explore freely</span><span class="badge" id="status">Loading</span></div><div class="frame-label"><div id="viewLabel">Front right</div><div class="caption" id="motionLabel">Push sideways and back → Recover low → Land and transfer weight</div></div><div class="footer">Eight viewing angles · Continuous motion<br><span id="fps"></span></div></section>
 </main>
