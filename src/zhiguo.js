@@ -6,7 +6,7 @@ import { createSkaterBody } from './skater-body.js';
 const DIRECTIONS=['Front','Front right','Right side','Back right','Back','Back left','Left side','Front left'];
 const TAU=Math.PI*2;
 
-export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-face-photo-v13.webp':__ZHIGUO_FACE_URL__}={}) {
+export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'./assets/zhiguo-head-v14.webp':__ZHIGUO_FACE_URL__}={}) {
   const root=new THREE.Group();root.name='zhiguo-articulated-3d-skater';
   const upper=createSkaterBody(),legs=createSkaterLegs(),motion=createSkatingMotion();
   root.add(upper.root,legs.root);

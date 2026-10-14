@@ -1,5 +1,41 @@
 # Character and cover assets
 
+## Version 14: head and hair modeled from her real appearance (2026-10-14)
+
+The head and hair are rebuilt from scratch; the earlier face projection, skull and hair are no longer used. She has one face, from one photograph, and one expression (her smile). Nothing swaps faces or expressions while she skates.
+
+**Measurement.** `tests/detect-face-landmarks.py` runs MediaPipe's FaceLandmarker on `assets/zhiguo-identity-v8.jpg`, the user's unmodified frontal portrait, and saves 478 landmarks (468 face and 10 iris points) with MediaPipe's canonical face mesh to `assets/zhiguo-face-landmarks.json`.
+
+**Shape.** `tests/make-head-model.py` aligns the landmarks to the canonical face, which undoes the portrait's 8° head turn, symmetrises them and scales them to a 62 mm pupil distance. The head is a radius field around a vertical axis:
+
+- A lightly regularised thin-plate spline through her landmarks forms the face (0.2 mm RMS from the measurements). The open mouth is recessed so the teeth sit behind the lips.
+- An adult-female cranium and neck form the rest: 22.3 cm chin to crown and 15 cm breadth.
+- The face/cranium difference is extended harmonically beyond the face outline, and the outer face is smoothed over about 4 mm, so there is no seam. The surface returns to the neck about 1 cm below her jaw line.
+
+The result is `src/zhiguo-head-model.js`.
+
+**Skin texture.** `assets/zhiguo-head-v14.webp` (1024 × 1024) uses the same azimuth/height layout as the mesh, and a thin-plate spline maps each texel to the portrait. Retouching is limited:
+
+- Removed the photographed wire rims, their sharpening halos and thin stray hairs by inpainting.
+- Completed the parts her hair hides in the photo (the outer half of her left eye, her left temple and cheek edge) from the mirror image of the same photo's visible side.
+- Evened out the low-frequency golden-hour shading and lifted the hard sun shadow under the nose, so the 3D lights do the shading.
+- White-balanced to her skin tone `#d6a38c`, checked against her indoor skating photo and the portrait's teeth. The neck, arms and legs use the same colour.
+- Faded to plain skin beyond the clean part of the photo, and repainted soft brows on the measured brow landmarks, since her thin real brows sit on the removed top rims.
+
+No generative model was used.
+
+**Glasses.** The lens outline is traced over the photographed hexagonal frame and placed in 3D 1–1.4 cm in front of her eyes. The frame has a high bridge, nose pads and temple arms that run back into her hair. The thin wires cast no shadows, because aliased wire shadows read as scars on the skin.
+
+**Hair.** `src/zhiguo-hair.js` follows her braided photos:
+
+- A center part, with a cap whose strands run from the part to each braid root. It lies on the scalp at the hairline, lifts over the ears and has soft volume at the sides.
+- Four curtain locks per side frame her face from the part to the jaw.
+- Two loose three-strand braids start behind the ear lobes and hang over the front of her shoulders, with pink-and-white elastics and short tufts.
+- The hair is dark brown with an auburn tint, with a strand texture and anisotropic highlights along the strands.
+- The braids sway on a damped spring and slide over the shirt.
+
+The unused MakeHuman head data was removed from `src/anatomical-mesh.js`; only the arms and hands remain from it.
+
 ## Version 13: real-photo face and eight-view reference outfit (2026-10-13)
 
 The user supplied five real photographs and an eight-view character sheet. The sheet matches `assets/zhiguo-atlas-a.webp`.

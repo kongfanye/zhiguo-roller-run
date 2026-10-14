@@ -3,6 +3,7 @@ import {solveTwoBone,placeBetween} from './util.js';
 import {ANATOMY} from './anatomical-mesh.js';
 import {batchStaticMeshes} from './mesh-batching.js';
 import {createIdentityHead,SKIN_COLOR} from './zhiguo-identity.js';
+import {createHair} from './zhiguo-hair.js';
 
 export const ARM_LENGTHS={upper:0.235,lower:0.225};
 const clamp=THREE.MathUtils.clamp,TAU=Math.PI*2,Y=new THREE.Vector3(0,1,0),Z=new THREE.Vector3(0,0,1);
@@ -150,7 +151,7 @@ export function createSkaterBody(){
     const {geometry,edge}=collarGeometry(side);mesh(geometry,fabric).name='pointed-shirt-collar';
     mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edge),80,.0021,6,false),fabric).name='collar-edge';
   }
-  const identity=createIdentityHead({mesh,tube,ellipsoid}),{head,skull,mouth,hair,faceMat}=identity;spine.add(head);
+  const identity=createIdentityHead({mesh,tube,ellipsoid,createHair}),{head,skull,mouth,hair,faceMat}=identity;spine.add(head);
   // Fine chain and pale green four-petal flower pendant from the reference.
   for(const side of [1,-1])tube([[-.010,.512,side*.052],[.040,.498,side*.050],[.090,.430,side*.030],[.116,.372,side*.010],[.121,.350,0]],.0007,chain);
   const pendant=new THREE.Group();pendant.name='green-flower-pendant';pendant.position.set(.124,.338,0);pendant.rotation.z=-.10;pendant.scale.setScalar(1.35);spine.add(pendant);
@@ -171,11 +172,11 @@ export function createSkaterBody(){
       shoulder:new THREE.Vector3(),elbow:new THREE.Vector3(),wrist:new THREE.Vector3(),target:new THREE.Vector3(),pole:new THREE.Vector3(),
       sleeveStart:new THREE.Vector3(),sleeveEnd:new THREE.Vector3(),qu:new THREE.Quaternion(),ql:new THREE.Quaternion(),qh:new THREE.Quaternion(),wristRest:new THREE.Quaternion().setFromAxisAngle(Y,side*.10).multiply(new THREE.Quaternion().setFromAxisAngle(Z,.055))};
   });
-  batchStaticMeshes(head,new Set([skull,...head.children.filter(n=>n.material===faceMat)]),hitMeshes);
+  batchStaticMeshes(head,new Set([skull]),hitMeshes);
   batchStaticMeshes(spine,new Set([shirt,tee,...arms.flatMap(a=>[a.sleeve,a.skinArm])]),hitMeshes);
   batchStaticMeshes(pendant,new Set(),hitMeshes);
   const a=new THREE.Vector3(),b=new THREE.Vector3(),h=new THREE.Vector3();
-  const state={joints:{},hands:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:13,faceSource:'original-photo-v13'};
+  const state={joints:{},hands:{},torsoDepth:.23,shoulderWidth:.33,poseVersion:0,jumpArmBlend:0,appearanceVersion:14,faceSource:'measured-photo-head-v14'};
   function pose(motion,ctx={},dt=0){
     root.position.set(-.025,motion.hipHeight,motion.shift);root.rotation.y=motion.pelvisYaw??0;
     const weight=Math.sin(motion.phase*TAU)*(motion.activity??0),forward=.07+clamp((ctx.speed??0)/15,0,1)*.07;

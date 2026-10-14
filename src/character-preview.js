@@ -43,7 +43,7 @@ function resize(){const {width,height}=stage.getBoundingClientRect();renderer.se
 new ResizeObserver(resize).observe(stage);resize();view(1,'full',true);
 character.ready.then(()=>{
   document.querySelector('#status').textContent='Character ready';document.querySelector('#error').textContent=character.state.error??'';
-  const image=character.upper.skull.material.userData.identityUniforms.uIdentity.value?.image;
+  const image=character.upper.skull.material.map?.image;
   if(image)document.querySelector('#referenceImage').src=image.src;
 });
 let previous=performance.now(),fpsTime=previous,frames=0;
