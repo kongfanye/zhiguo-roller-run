@@ -38,7 +38,7 @@ export function createZhiguo({faceUrl=typeof __ZHIGUO_FACE_URL__==='undefined'?'
     upper.root.visible=legs.root.visible=!hide;
   }
   function update(dt,ctx) {
-    const gait=motion.update(dt,ctx);legs.pose(gait,ctx,dt);upper.pose(gait,ctx,dt);
+    const gait=motion.update(dt,ctx);legs.pose(gait,ctx,dt);upper.pose(gait,ctx,dt,legs.state);
     state.phase=gait.phase;state.cadenceSpm=gait.cadenceSpm;state.gait=gait;
     state.cheer=Math.max(0,state.cheer-dt);state.collect=Math.max(0,state.collect-dt);
     shadow.scale.setScalar(ctx.airborne?0.65:1);shadowMaterial.opacity=ctx.airborne?0.4:0.85;

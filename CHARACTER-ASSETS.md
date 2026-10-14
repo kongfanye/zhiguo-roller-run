@@ -1,5 +1,25 @@
 # Character and cover assets
 
+## Version 15: body and outfit from her skating photo (2026-10-14)
+
+The body and clothing are rebuilt from scratch from the user's real skating photo, the same photo the cover cutout comes from. The earlier outfit followed the eight-view sheet. All of it is procedural geometry with generated textures; no image is projected onto the body.
+
+**Body.** `src/skater-body.js` models a slim adult-female torso: hips, a narrow waist, the bust, narrow shoulders and a crew neck that closes round the measured neck. In `src/skater-legs.js` each leg is one continuous mesh from inside the shorts to inside the boot:
+
+- The leg has a thigh slightly wider than deep, a kneecap, a calf that bulges at the back and inside, and a flatter shin.
+- It is skinned across pelvis, thigh and shin frames, so the knee bends smoothly.
+- The arms and hands remain the MakeHuman meshes.
+
+**Outfit:**
+
+- **Shirt.** An oversized short-sleeve shirt in a cream, periwinkle, pale-blue, navy and tan check, worn open. It hangs straight from the bust to mid-thigh with a shirt-tail hem, and has rolled cuffs, a pointed collar, front edges and white buttons on her right. Each frame its lower panels are pushed outward from her body to clear the thighs and shorts.
+- **Tee.** A fitted white tee with a black ribbed crew neckband and a black print: "FREE" in bold serif capitals over a line of script and a small emblem.
+- **Shorts.** Very dark high-waisted denim shorts with a waistband, belt loops, a metal button and fly stitching. The legs are slightly A-line and end mid-thigh with light topstitching.
+- **Socks.** Thick white crew socks slouched in soft folds above the boot cuffs.
+- **Skates.** Black inline skates with a white lower shell trimmed in red, a buckled cuff strap and instep strap, a red logo tab, laces, a black frame and four cream wheels with dark hubs. The shells' inverted normals were corrected.
+
+The green flower pendant from the sheet is gone, since she wears none in the skating photo.
+
 ## Version 14: head and hair modeled from her real appearance (2026-10-14)
 
 The head and hair are rebuilt from scratch; the earlier face projection, skull and hair are no longer used. She has one face, from one photograph, and one expression (her smile). Nothing swaps faces or expressions while she skates.

@@ -6,7 +6,15 @@ Game by kongfanye. The cover uses a cutout from the user's real photograph of Zh
 
 Lace up your skates and catch fish along a 3D coast. Play on desktop or mobile, with five camera modes, day and night, sound effects, jumps and a one-foot balance trick.
 
-The entire character uses 3D meshes and joints. Version 14 models her head and hair from scratch from her real photographs. The head's shape is measured from her frontal smiling portrait: 478 face landmarks give the 3D surface of her face, which joins an adult-female cranium and neck, and the same photo is her skin texture. She has this one face and one expression, her smile, throughout the game. Large hexagonal rose-gold wire glasses are traced over her real frames and sit in front of her eyes. Her hair follows her braided photos: a center part, curtain strands framing her face, hair over the ears, and two loose three-strand braids from behind the ears over the front of her shoulders, tied with pink-and-white elastics. Clothing follows the reference sheet: a buttoned blue-and-lavender plaid short-sleeve shirt with a pointed collar and a green flower pendant, loose navy denim shorts, thick white socks, and black skates with a pink floral print, hinged cuffs and large cream wheels. Each finger bends around its own joints, and the thumbs point forward when the palms face the body (version 12). The cranium, ears and back of the head are anthropometric rather than scanned, since the photos show only her face.
+The entire character uses 3D meshes and joints. Version 14 models her head and hair from scratch from her real photographs. The head's shape is measured from her frontal smiling portrait: 478 face landmarks give the 3D surface of her face, which joins an adult-female cranium and neck, and the same photo is her skin texture. She has this one face and one expression, her smile, throughout the game. Large hexagonal rose-gold wire glasses are traced over her real frames and sit in front of her eyes. Her hair follows her braided photos: a center part, curtain strands framing her face, hair over the ears, and two loose three-strand braids from behind the ears over the front of her shoulders, tied with pink-and-white elastics. Version 15 rebuilds her body and outfit from her real skating photo. She has a slim build and continuous skinned legs with real thigh, knee, calf and ankle shapes. She wears:
+
+- an oversized cream-and-blue plaid short-sleeve shirt, open over the rest, with rolled cuffs, a pointed collar and white buttons
+- a fitted white tee with a black crew neckband and a black "FREE" print
+- very dark high-waisted denim shorts ending mid-thigh
+- thick white socks slouched over the boot cuffs
+- black inline skates with a white red-trimmed lower shell, buckled straps, hinged cuffs and cream wheels
+
+The open shirt's hem is pushed out by her thighs as she skates, so her legs never pass through it. Each finger bends around its own joints, and the thumbs point forward when the palms face the body (version 12). The cranium, ears and back of the head are anthropometric rather than scanned, since the photos show only her face.
 
 The existing skeleton and skating motion remain: alternate sideways pushes, recovery and weight transfer, with continuous arm and braid movement and smooth transitions between gliding, jumping, landing and balancing. The face texture is embedded in the HTML, so it also loads when the file is opened directly. All eight viewing angles use the same 3D model; the camera never changes the character's shape. See [MOTION-REFERENCES.md](MOTION-REFERENCES.md) for movement notes, [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution, and [CHARACTER-ASSETS.md](CHARACTER-ASSETS.md) for face and cover assets.
 
@@ -35,7 +43,7 @@ See GitHub's [publishing-source documentation](https://docs.github.com/en/pages/
 
 Run `npm ci` to install dependencies. `npm test` checks motion constraints, joint continuity at 30/60/120 Hz, her head's proportions and smooth surface, that her face never changes while she skates, braid movement, hand completeness and deformation. `python3 tests/make-head-model.py` rebuilds the head shape, glasses and skin texture from her portrait and its landmarks (requires numpy, scipy and Pillow); `tests/detect-face-landmarks.py` re-measures the landmarks with MediaPipe. `npm run build` updates the game and character preview. `npm run test:render` uses the installed Edge browser to verify eight directions, mobile rendering, motion controls and direct HTML loading; set `EDGE_PATH` to use another Chromium executable. Commit and push both the source and `docs` output to redeploy Pages.
 
-The published interface, runtime messages, code comments, test captions and project documentation are in English. The English release uses the version 14 character.
+The published interface, runtime messages, code comments, test captions and project documentation are in English. The English release uses the version 15 character.
 
 ## Original game
 
