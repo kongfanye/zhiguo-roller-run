@@ -69,6 +69,8 @@ export function createIdentityHead({mesh,tube,ellipsoid,createHair}){
   const head=new THREE.Group();head.name='zhiguo-photo-measured-head';head.position.set(.002,.635,0);
   const faceMat=new THREE.MeshStandardMaterial({color:SKIN_COLOR,roughness:.62});faceMat.name='zhiguo-skin-and-face';
   const skull=mesh(headGeometry(),faceMat,head);skull.name='measured-head-face-and-neck';
+  // Hard shadow-map edges (the nose on the lip, the glasses) read as stiff marks on the skin.
+  skull.receiveShadow=false;
   const hair=createHair?createHair({head,skull,mesh}):{root:new THREE.Group(),dynamic:[],state:{},pose(){}};
 
   // Large geometric wire frames in rose gold, traced over her real glasses.

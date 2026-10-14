@@ -77,6 +77,25 @@ def to_head(c):
 
 H = to_head(face); HI = to_head(iris)
 
+# ---------------------------------------------------------------- her smile
+# Her one expression is her smile. When she smiles her eyes narrow into
+# crescents; on the 3D head the portrait's lids read a little more open, so the
+# lower lids rise and the upper lids drop slightly, most at the middle of each
+# eye. Shape and texture both use these landmarks, so they stay aligned.
+def narrow_eye(upper, lower, iris, rise=.28, drop=.08):
+    mid = (len(upper) - 1) / 2
+    for k, (u, l) in enumerate(zip(upper, lower)):
+        centre = 1 - abs(k - mid) / mid
+        gap = H[u, 1] - H[l, 1]
+        H[l, 1] += gap * rise * (.55 + .45 * centre); H[u, 1] -= gap * drop * (.5 + .5 * centre)
+    HI[iris, 1] += (H[upper[len(upper) // 2], 1] + H[lower[len(lower) // 2], 1]) / 2 - HI[iris, 1]
+narrow_eye([246, 161, 160, 159, 158, 157, 173], [7, 163, 144, 145, 153, 154, 155], 0)
+narrow_eye([466, 388, 387, 386, 385, 384, 398], [249, 390, 373, 374, 380, 381, 382], 5)
+# On the head the photographed mouth reads a touch wide: draw its corners in by
+# about 5%, fading out across the cheeks.
+MOUTH_Y = H[[13, 14], 1].mean()
+H[:, 2] *= 1 - .06 * np.exp(-((H[:, 1] - MOUTH_Y) / .016) ** 2) * np.exp(-(H[:, 2] / .05) ** 4)
+
 # ---------------------------------------------------------------- grid layout
 AXIS_X = .005
 COLS, ROWS = 192, 150
@@ -153,12 +172,19 @@ for u_i, l_i in zip(UPPER_INNER, LOWER_INNER):
     for t in (.3, .5, .7):
         p = H[u_i] * (1 - t) + H[l_i] * t
         a, yy, rr = cylinder(p[None])
-        extra_xyz.append((a[0], yy[0], rr[0] - .0045))
+        # Shallow in the middle, shallower towards the corners: the teeth sit just
+        # behind the lips rather than in a deep slot.
+        corner = 1 - .5 * (u_i in (191, 415))
+        extra_xyz.append((a[0], yy[0], rr[0] - .0026 * corner))
 extra = np.array(extra_xyz)
 geo_points = np.r_[np.c_[az_l * R0, y_l], extra[:, :2] * [R0, 1]]
 geo_values = np.r_[r_l, extra[:, 2]]
 # Light regularisation (0.2 mm RMS from the landmarks) removes detector noise.
 face_radius = RBFInterpolator(geo_points, geo_values, kernel='thin_plate_spline', smoothing=3e-6)
+
+
+def smoothstep_np(x, a, b):
+    t = np.clip((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t)
 
 
 def polygon_mask(points_ij, shape):
@@ -185,7 +211,7 @@ delta = np.zeros_like(base); delta[inside] = front - base[inside]
 lower = oval_y < -.02
 jaw_order = np.argsort(oval_az[lower])
 jaw_y = np.interp(AA, oval_az[lower][jaw_order], oval_y[lower][jaw_order], left=np.nan, right=np.nan)
-under_jaw = np.nan_to_num(YY < jaw_y - .011 - .004 * np.cos(AA), nan=0).astype(bool)
+under_jaw = np.nan_to_num(YY < jaw_y - .016 - .004 * np.cos(AA), nan=0).astype(bool)
 fixed = inside | under_jaw | (np.abs(AA) > np.radians(140)) | (YY < -.118) | (YY > .120)
 n_r, n_c = AA.shape; idx = np.arange(n_r * n_c).reshape(n_r, n_c)
 dx = np.gradient(AZ)[None, :] * np.maximum(base, .02); dy = np.gradient(YS)[:, None] * np.ones_like(base)
@@ -213,6 +239,28 @@ core = np.clip((ndimage.distance_transform_edt(inside) * cell_mm - 12) / 10, 0, 
 core = ndimage.gaussian_filter(core, 2)
 smoothed = ndimage.gaussian_filter(radius, (2.4, 2.4), mode=('nearest', 'wrap'))
 radius = radius * core + smoothed * (1 - core)
+
+
+def grid_zone(ids, size, pts=None):
+    """Gaussian weight (0..1) on the grid around some landmarks."""
+    za, zy, _ = cylinder(H[ids] if pts is None else pts)
+    w = np.zeros(AA.shape)
+    for a1, y1 in zip(za, zy): w = np.maximum(w, np.exp(-(((AA - a1) * R0) ** 2 + (YY - y1) ** 2) / size ** 2))
+    return w
+
+
+# Smiling lifts the apples of her cheeks and pushes up under the lower lids.
+apples = grid_zone([50, 280], .016, H[[50, 280]] + [0, .004, 0])
+under_lids = grid_zone([145, 374], .0055, H[[145, 374]] - [0, .0035, 0])
+radius = radius + .0024 * apples + .0010 * under_lids
+# Soften the whole face a little, and the nose, chin and jaw more, so the smile
+# reads gentle rather than carved; the eyes and lips keep their definition.
+crisp = np.maximum(grid_zone([33, 133, 362, 263, 159, 145, 386, 374], .006), grid_zone([13, 14, 61, 291, 0, 17], .005))
+soft = np.maximum(grid_zone([1, 2, 98, 327, 4], .010), grid_zone([152, 148, 377, 176, 400, 149, 378, 136, 365, 172, 397], .016))
+mild = ndimage.gaussian_filter(radius, (1.0, 1.0), mode=('nearest', 'wrap'))
+strong = ndimage.gaussian_filter(radius, (1.9, 1.9), mode=('nearest', 'wrap'))
+radius = radius + (mild - radius) * .7 * (1 - crisp) * inside
+radius = radius + (strong - radius) * .8 * soft
 radius[:, -1] = radius[:, 0]
 radius[-1, :] = 0
 
@@ -328,8 +376,8 @@ CLEAN = [(640, 293), (704, 293), (712, 306), (716, 318), (721, 330), (725, 340),
          (720, 390), (716, 400), (711, 410), (705, 420), (698, 430), (688, 436), (676, 438), (662, 435), (648, 428),
          (636, 416), (628, 404), (624, 392), (621, 375), (619, 355), (620, 335), (624, 320), (632, 306)]
 img = cleaned()
-pts = np.r_[np.c_[az_l * R0, y_l], np.c_[cylinder(HI)[0] * R0, cylinder(HI)[1]]]
-tps = RBFInterpolator(pts, PIXELS, kernel='thin_plate_spline', smoothing=1e-9)
+pts = np.r_[np.c_[az_l * R0, y_l], np.c_[cylinder(HI[[0, 5]])[0] * R0, cylinder(HI[[0, 5]])[1]]]
+tps = RBFInterpolator(pts, np.r_[PIXELS[:468], PIXELS[[468, 473]]], kernel='thin_plate_spline', smoothing=1e-9)
 uv = tps(q)
 tex = np.zeros((TEX_H, TEX_W, 3)); tex[band] = bilinear(img, uv[:, 0], uv[:, 1])
 clean_img = Image.new('L', (img.shape[1], img.shape[0]), 0); ImageDraw.Draw(clean_img).polygon(CLEAN, fill=255)
@@ -356,9 +404,31 @@ tex *= TARGET_SKIN / np.median(tex[deep & visible], axis=0)
 # so lift it most of the way to her skin tone (nostrils and lips excepted).
 lum = tex @ [.2126, .7152, .0722]
 base_zone = near([2, 164, 167, 393, 98, 327], .012) & ~near([98, 327], .0035) & ~near([0, 13, 14, 17, 61, 291, 37, 267], .006) & visible
-lift = np.clip((np.median(lum[deep & visible]) / np.maximum(lowpass(lum, (skin & visible & ~near([98, 327], .0035)).astype(float), .004), 1)) ** .85, 1, 1.5)
+lift = np.clip((np.median(lum[deep & visible]) / np.maximum(lowpass(lum, (skin & visible & ~near([98, 327], .0035)).astype(float), .004), 1)) ** .95, 1, 1.75)
 soft_zone = ndimage.gaussian_filter(base_zone.astype(float), .002 / px_m)
 tex *= (1 + (lift - 1) * soft_zone)[..., None]
+# Shade lit by the blue sky (beside her nose, on her left cheek) and the lifted
+# shadow both drift from her skin hue; pull them back, away from eyes and lips.
+lum = (tex @ [.2126, .7152, .0722])[..., None]
+blue = np.clip((tex[..., 2] / np.maximum(tex[..., 0], 1) - TARGET_SKIN[2] / TARGET_SKIN[0]) / .12, 0, 1)
+features = near([33, 133, 362, 263, 159, 145, 386, 374, 468, 473], .008) | near([13, 14, 61, 291, 0, 17], .009)
+toward_skin = np.clip(.85 * blue + .55 * soft_zone * np.clip((lift - 1) / .5, 0, 1), 0, .9) * ~features * visible
+tex = tex + (lum * hue - tex) * toward_skin[..., None]
+# Lighten the deep nostril shadows a little; the 3D nose adds its own.
+nostrils = ndimage.gaussian_filter(near([98, 327], .0045).astype(float), .0012 / px_m)
+tex = tex + (TARGET_SKIN * .66 - tex).clip(0) * .6 * nostrils[..., None]
+# The photographed teeth read as a bright band on the head: tone them down and
+# let the lips shade them, more towards the corners and under the upper lip.
+INNER_LIPS = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95]
+ia, iy, _ = cylinder(H[INNER_LIPS])
+mouth_open = polygon_mask(np.c_[azimuth_column(ia) * TEX_W, np.interp(iy, YS, np.arange(ROWS + 1)) / ROWS * TEX_H], TA.shape)
+mouth_soft = ndimage.gaussian_filter(mouth_open.astype(float), .0008 / px_m)
+ma, my, _ = cylinder(H[[13, 14]].mean(0)[None]); half_w = np.abs(ia).max() - ma[0]
+across = np.clip(np.abs(TA - ma[0]) / max(half_w, 1e-3), 0, 1)
+top = np.clip((iy.max() - TY) / max(iy.max() - iy.min(), 1e-3), 0, 1)
+shade = .90 * (1 - .34 * across ** 2) * (.82 + .18 * np.clip(top / .35, 0, 1))
+tex *= (1 - mouth_soft * (1 - shade))[..., None]
+tex = tex + (tex @ [.2126, .7152, .0722])[..., None] * [.01, 0, -.02] * mouth_soft[..., None]
 # The head is symmetric: where hair hides her face (the outer half of her left
 # eye, her left temple and cheek), the mirror image of the same photo's visible
 # side completes it, feathered over 5 mm into the real pixels.
@@ -367,6 +437,12 @@ own = np.clip(ndimage.distance_transform_edt(visible) * px_m / .005, 0, 1)
 own = np.where(mirror_vis, own, visible.astype(float))
 tex = tex * own[..., None] + mirror_tex * (1 - own[..., None])
 face_area = visible | mirror_vis
+# Her left cheek was in the sun's shade; give it the broad colour and shading of
+# her lit right cheek (from the same photo, mirrored), keeping its own detail.
+broad_own = np.stack([lowpass(tex[..., c], face_area.astype(float), .011) for c in range(3)], -1)
+broad_mirror = broad_own[:, ::-1]
+left_side = (smoothstep_np(-TA, np.radians(6), np.radians(20)) * face_area * mirror_vis)[..., None]
+tex = tex + (broad_mirror - broad_own) * left_side * ~near([33, 133, 362, 263, 159, 145, 386, 374, 468, 473, 13, 14, 61, 291], .006)[..., None]
 # Near its edge the photo's broad colour (the blush on her cheeks, the shade
 # along her jaw) gives way to her plain skin tone; fine detail stays.
 edge_dist = ndimage.distance_transform_edt(face_area) * px_m
@@ -386,20 +462,23 @@ grain = ndimage.gaussian_filter(rng.standard_normal(TA.shape), (0.6, 3.0))
 grain = (grain - grain.mean()) / grain.std()
 for upper, lower in (([70, 63, 105, 66, 107], [46, 53, 52, 65, 55]), ([300, 293, 334, 296, 336], [276, 283, 282, 295, 285])):
     ua, uy, _ = cylinder(H[upper]); la, ly, _ = cylinder(H[lower])
-    ca, cy = (ua + la) / 2, (uy + ly) / 2 - .0012
+    # Just above the rims, as in her photos; the detector puts them on the rims.
+    ca, cy = (ua + la) / 2, (uy + ly) / 2 + .0018
     # Order the brow from its head (near the nose) to its tail.
     order = np.argsort(np.abs(ca)); ca, cy = ca[order], cy[order]
     t = np.linspace(0, 1, 60)
     seg = np.r_[0, np.cumsum(np.hypot(np.diff(ca) * R0, np.diff(cy)))]; s_ = t * seg[-1]
     path_a, path_y = np.interp(s_, seg, ca), np.interp(s_, seg, cy)
+    # A soft natural arch: rising to a peak two-thirds along, then a tapering tail.
+    path_y = path_y + .0014 * np.sin(np.pi / 2 * np.minimum(t / .65, 1)) - .0022 * smoothstep_np(t, .65, 1)
     density = np.zeros(TA.shape)
     for k in range(len(t)):
-        half = .0024 * (1 - .45 * t[k]) + .0006
+        half = .0019 * (1 - .55 * t[k]) + .0007
         d = np.hypot((TA - path_a[k]) * R0, TY - path_y[k])
         head_fade = np.clip(t[k] / .18, .35, 1) * np.clip((1 - t[k]) / .25, .25, 1)
         density = np.maximum(density, np.clip(1 - d / half, 0, 1) ** .8 * head_fade)
-    brow = np.array([78., 54., 44.])
-    amount = np.clip(density * (.70 + .16 * grain), 0, .85)[..., None]
+    brow = np.array([86., 60., 48.])
+    amount = np.clip(density * (.62 + .16 * grain), 0, .78)[..., None]
     tex = tex * (1 - amount) + brow * amount
 
 # Image rows run top-down while texture v runs bottom-up.
@@ -425,7 +504,7 @@ def glasses_point(px, py):
 def smooth_outline(points, n=96):
     """Closed polygon -> rounded closed curve through the corner points (Chaikin)."""
     pts = np.array(points, float)
-    for _ in range(3):
+    for _ in range(2):
         nxt = np.roll(pts, -1, 0); pts = np.stack([.75 * pts + .25 * nxt, .25 * pts + .75 * nxt], 1).reshape(-1, 2)
     seg = np.r_[0, np.cumsum(np.hypot(*np.diff(np.r_[pts, pts[:1]], axis=0).T))]
     t = np.linspace(0, seg[-1], n, endpoint=False)

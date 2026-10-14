@@ -4,7 +4,8 @@ import {ANATOMY} from './anatomical-mesh.js';
 import {batchStaticMeshes} from './mesh-batching.js';
 import {createIdentityHead,SKIN_COLOR} from './zhiguo-identity.js';
 import {createHair} from './zhiguo-hair.js';
-import {denimTexture} from './skater-legs.js';
+import {denimTexture,weldSeamNormals} from './skater-legs.js';
+import {refineArm} from './arm-mesh.js';
 
 // Zhiguo's upper body and outfit as in her skating photo: a slim build; a fitted
 // white T-shirt with a black neckband and a black "FREE" print, tucked into very
@@ -55,7 +56,7 @@ const neckline=a=>.512-.020*Math.max(0,Math.cos(a))**1.6;
 // The oversized open shirt hangs straight from the bust and shoulder blades,
 // boxy over the hips, with room for the arms beside it.
 const SHIRT=sections([[-.135,.126,.136,.197],[-.05,.126,.141,.196],[.05,.125,.139,.190],[.15,.125,.119,.176],[.22,.126,.108,.162],
-  [.30,.127,.105,.153],[.36,.121,.106,.157],[.41,.104,.106,.166],[.445,.086,.098,.172],[.475,.065,.080,.138],[.50,.050,.069,.088],[.518,.046,.067,.069]]);
+  [.30,.127,.105,.153],[.36,.121,.106,.158],[.40,.106,.106,.170],[.425,.097,.103,.180],[.445,.086,.096,.175],[.465,.072,.086,.155],[.485,.060,.076,.121],[.502,.051,.070,.090],[.518,.046,.067,.069]]);
 // Where the open fronts' edges hang (distance from the middle of the body).
 const EDGE=sections([[-.135,.068,0,0],[.10,.064,0,0],[.25,.066,0,0],[.34,.070,0,0],[.40,.074,0,0],[.45,.070,0,0],[.49,.058,0,0],[.518,.052,0,0]]);
 const SHIRT_HEM=-.135,SHIRT_TOP=.518;
@@ -92,13 +93,57 @@ function shortsGeometry(){
 function edgeAngle(y){const [, ,w]=SHIRT(y);return Math.asin(clamp(EDGE(y)[0]/w,0,.98));}
 function shirtPoint(i,j,rows,cols,out=[]){
   const t=i/rows,y=lerp(SHIRT_HEM,SHIRT_TOP,t),gap=edgeAngle(y),a=gap+(TAU-2*gap)*j/cols,[f,b,w]=SHIRT(y);
-  // A shirt-tail hem: longer at the front and back than at the side seams.
-  const hem=.024*Math.sin(a)**2*(1-t)**6;
-  const [x,z]=ellipsePoint(a,f,b,w,centreX(y));
-  out[0]=x;out[1]=y+hem;out[2]=z;out[3]=a/TAU*13;out[4]=y/.072;return out;
+  // A shirt-tail hem, longer at the front and back than at the side seams, that
+  // ripples a little rather than running ruler-straight.
+  const hem=.024*Math.sin(a)**2*(1-t)**6+.005*Math.sin(a*6+.8)*(1-t)**5;
+  const [x0,z0]=ellipsePoint(a,f,b,w,centreX(y));
+  // The fabric hangs in soft vertical folds that deepen towards the hem, gathers
+  // in diagonal folds below the armpits, and bunches lightly at the waist sides.
+  const sideDist=Math.abs(Math.abs(Math.sin(a))-1),fall=smooth(.32-y,0,.40);
+  const fold=.0055*fall*(Math.sin(a*9+1.7*Math.sin(a*2.3)+y*6)+.35*Math.sin(a*17+y*11))
+    +.0028*Math.exp(-((sideDist/.06)**2))*Math.exp(-(((y-.34)/.055)**2))*Math.sin((y-.34)*95+Math.cos(a)*6)
+    +.0022*Math.exp(-((sideDist/.08)**2))*Math.exp(-(((y-.15)/.05)**2))*Math.sin(y*150+a*3)
+    +.004*smooth(.05-y,0,.18);
+  const cx=centreX(y),r=Math.hypot(x0-cx,z0),k=1+fold/Math.max(r,.02);
+  out[0]=cx+(x0-cx)*k;out[1]=y+hem;out[2]=z0*k;out[3]=a/TAU*13;out[4]=y/.072;return out;
 }
 function shirtGeometry(rows=64,cols=88){
   return grid(rows,cols,(t,s)=>shirtPoint(Math.round(t*rows),Math.round(s*cols),rows,cols));
+}
+// A loose short sleeve lofted from the armhole on the shirt's dropped shoulder
+// down to a rolled cuff round the upper arm. It is rebuilt as the arm moves, so
+// it drapes from the shoulder instead of riding the arm like a rigid tube.
+const SLEEVE_ROWS=22,SLEEVE_COLS=36;
+function sleeveGeometry(){
+  const g=grid(SLEEVE_ROWS,SLEEVE_COLS,(t,s)=>[0,0,0,s*5.5,t*2.2]);
+  g.attributes.position.setUsage(THREE.DynamicDrawUsage);return g;
+}
+const REST_UPPER_ARM=[1,-1].map(side=>new THREE.Vector3(-.054,-.975,side*.215).normalize());
+const sv={q:new THREE.Quaternion(),half:new THREE.Quaternion(),c0:new THREE.Vector3(),n0:new THREE.Vector3(),c1:new THREE.Vector3(),n1:new THREE.Vector3(),c:new THREE.Vector3(),n:new THREE.Vector3(),u:new THREE.Vector3(),w:new THREE.Vector3(),p:new THREE.Vector3(),x:new THREE.Vector3(1,0,0)};
+function poseSleeve(geometry,side,shoulder,elbow){
+  const {q,half,c0,n0,c1,n1,c,n,u,w,p,x}=sv;
+  n1.subVectors(elbow,shoulder).normalize();
+  // The armhole follows a quarter of the arm's swing about the shoulder, so the
+  // shoulder cap stays covered as the arm moves.
+  q.setFromUnitVectors(REST_UPPER_ARM[side>0?0:1],n1);half.identity().slerp(q,.25);
+  c0.set(-.016,.402,side*.160).sub(shoulder).applyQuaternion(half).add(shoulder);n0.set(0,-.45,side).normalize().applyQuaternion(half);c1.copy(shoulder).addScaledVector(n1,shoulder.distanceTo(elbow)*.60);
+  const reach=c0.distanceTo(c1),pos=geometry.attributes.position;
+  for(let i=0;i<=SLEEVE_ROWS;i++){
+    const t=i/SLEEVE_ROWS,mt=1-t,cuff=smooth(t,.80,.86);
+    // Centre on a curve leaving the armhole along its normal; frame turns towards the arm.
+    c.copy(c0).multiplyScalar(mt*mt).addScaledVector(p.copy(c0).addScaledVector(n0,reach*.40),2*t*mt).addScaledVector(c1,t*t);
+    n.copy(n0).lerp(n1,smooth(t,0,.8)).normalize();u.copy(x).addScaledVector(n,-x.dot(n)).normalize();w.crossVectors(n,u);
+    const a0=lerp(.060,.063,t),b0=lerp(.063,.063,smooth(t,0,.6)),bulge=.004*Math.sin(Math.PI*Math.min(1,t/.85))+.0045*cuff;
+    for(let j=0;j<=SLEEVE_COLS;j++){
+      const a=j/SLEEVE_COLS*TAU;
+      // Soft folds where the fabric gathers, and an uneven, tilted rolled cuff.
+      const folds=1+.05*Math.sin(a*3+t*5+side)*smooth(t,.08,.6)*(1-cuff)+.035*Math.sin(a*2+1.1+side)*cuff;
+      const tilt=.016*Math.cos(a)*cuff*side+.010*Math.sin(a*3)*cuff;
+      p.copy(c).addScaledVector(u,Math.cos(a)*(a0+bulge)*folds).addScaledVector(w,Math.sin(a)*(b0+bulge)*folds).addScaledVector(n,tilt);
+      pos.setXYZ(i*(SLEEVE_COLS+1)+j,p.x,p.y,p.z);
+    }
+  }
+  pos.needsUpdate=true;geometry.computeVertexNormals();
 }
 // A pointed collar: a stand round the back of the neck that folds over and lies
 // on the shoulders, spreading open to points on the upper chest.
@@ -128,10 +173,11 @@ function dataTexture(w,h,pixel,{alpha=false}={}){
   const t=new THREE.DataTexture(data,w,h);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=8;t.needsUpdate=true;return t;
 }
-// Her shirt's check: a cream ground with periwinkle-blue bands, pale blue,
-// fine navy lines and a thin tan line, woven as a 2/2 twill.
-const PLAID=[[22,[239,234,219]],[2,[43,53,97]],[6,[239,234,219]],[17,[124,151,207]],[6,[167,189,227]],[17,[124,151,207]],
-  [6,[239,234,219]],[2,[43,53,97]],[20,[239,234,219]],[3,[205,185,133]],[12,[242,238,226]],[9,[167,189,227]],[6,[239,234,219]]];
+// Her shirt's check, from the skating photo: a warm sand ground with
+// periwinkle-blue bands, a near-black grid line, cream and tan lines, woven as a 2/2 twill.
+const BEIGE=[222,204,172],INK=[38,38,52],CREAM=[238,234,224],BLUE=[110,132,190],PALE=[160,176,214],TAN=[196,168,118];
+const PLAID=[[14,BEIGE],[2,INK],[4,BEIGE],[2,CREAM],[8,BEIGE],[16,BLUE],[4,PALE],[16,BLUE],[8,BEIGE],[2,CREAM],[4,BEIGE],[2,INK],
+  [14,BEIGE],[3,TAN],[6,BEIGE],[8,BLUE],[15,BEIGE]];
 const plaidStripe=[];for(const [n,c] of PLAID)for(let k=0;k<n;k++)plaidStripe.push(c);
 function plaidTexture(){
   const n=plaidStripe.length;
@@ -187,12 +233,12 @@ export function createSkaterBody(){
   function tube(points,r,mat,parent=spine,closed=false){return mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p=>p.isVector3?p:new THREE.Vector3(...p)),closed),closed?96:40,r,6,closed),mat,parent);}
 
   // The fitted white tee is the visible torso; a black ribbed band edges the crew neck.
-  const tee=mesh(teeGeometry(),teeMat);tee.name='white-fitted-tee';
+  const tee=mesh(teeGeometry(),teeMat);tee.name='white-fitted-tee';weldSeamNormals(tee.geometry,56,72);
   const neck=[];for(let n=0;n<64;n++){const a=n/64*TAU;neck.push(teePoint(a,neckline(a)-.002,.0025));}
   tube(neck,.0042,bandMat,spine,true).name='black-crew-neckband';
   mesh(printGeometry(),printMat).name='tee-print-FREE';
   // High-waisted shorts: waistband, belt loops, a metal button and the fly.
-  const shorts=mesh(shortsGeometry(),denim);shorts.name='dark-denim-high-waisted-shorts';
+  const shorts=mesh(shortsGeometry(),denim);shorts.name='dark-denim-high-waisted-shorts';weldSeamNormals(shorts.geometry,26,72);
   for(const a of [.55,1.45,2.4,Math.PI,-.55,-1.45,-2.4]){
     const [f,b,w]=SHORTS(.136),[x,z]=ellipsePoint(a,f+.004,b+.004,w+.004);
     const loop=mesh(new THREE.BoxGeometry(.004,.026,.011),denim);loop.position.set(x,.137,z);loop.rotation.y=-a;loop.name='belt-loop';
@@ -219,12 +265,11 @@ export function createSkaterBody(){
   const identity=createIdentityHead({mesh,tube,ellipsoid,createHair}),{head,skull,mouth,hair}=identity;spine.add(head);
   const knot=new THREE.Object3D();knot.position.set(-.035,.526,0);spine.add(knot);
   const arms=[1,-1].map((side,i)=>{
-    const data=mirrorArmBindPose(ANATOMY.arms[i]),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(data.weight.length*3),3));g.setIndex(data.indices);
+    const data=refineArm(mirrorArmBindPose(ANATOMY.arms[i]),ARM_LENGTHS.lower),g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(data.weight.length*3),3));g.setIndex(data.indices);
     const skinArm=mesh(g,skin);skinArm.name=(i?'left':'right')+'-continuous-arm-and-hand';skinArm.frustumCulled=false;g.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const upper=new THREE.Object3D(),lower=new THREE.Object3D(),hand=new THREE.Object3D();spine.add(upper,lower,hand);
     // Loose, oversized short sleeve, rolled into a cuff above the elbow.
-    const sleeveProfile=[[0,0],[.040,0],[.058,.08],[.0675,.18],[.069,.32],[.067,.70],[.068,.72],[.072,.74],[.073,.97],[.068,1],[.064,.97]].map(([r,y])=>new THREE.Vector2(r,y));
-    const sleeve=mesh(new THREE.LatheGeometry(sleeveProfile,32),sleeveMat);sleeve.name='rolled-plaid-sleeve';
+    const sleeve=mesh(sleeveGeometry(),sleeveMat);sleeve.name='rolled-plaid-sleeve';sleeve.frustumCulled=false;
     return {side,name:i?'left':'right',upper,lower,hand,sleeve,skinArm,data,
       shoulder:new THREE.Vector3(),elbow:new THREE.Vector3(),wrist:new THREE.Vector3(),target:new THREE.Vector3(),pole:new THREE.Vector3(),
       sleeveStart:new THREE.Vector3(),sleeveEnd:new THREE.Vector3(),qu:new THREE.Quaternion(),ql:new THREE.Quaternion(),qh:new THREE.Quaternion(),wristRest:new THREE.Quaternion().setFromAxisAngle(Y,side*.10).multiply(new THREE.Quaternion().setFromAxisAngle(Z,.055))};
@@ -250,7 +295,7 @@ export function createSkaterBody(){
         // Cloth is pushed outward from the body, like a skirt over the legs, so
         // the open fronts never swing across the middle.
         out.set(p.x-centreX(p.y),0,p.z).normalize();
-        for(let pass=0;pass<4;pass++){
+        for(let pass=0;pass<8;pass++){
           let moved=false;
           for(const c of capsules){
             d.subVectors(c.b,c.a);const len=d.length();d.divideScalar(len);
@@ -290,9 +335,8 @@ export function createSkaterBody(){
         a.lerp(b,data.weight[n]).lerp(h,data.handWeight[n]);p.setXYZ(n,a.x,a.y,a.z);
       }
       p.needsUpdate=true;arm.skinArm.geometry.computeVertexNormals();
-      // The dropped shoulder seam sits just outside and below the shoulder joint.
-      arm.sleeveStart.copy(shoulder);arm.sleeveStart.y+=.002;arm.sleeveStart.z+=side*.004;
-      arm.sleeveEnd.copy(shoulder).lerp(elbow,.62);placeBetween(arm.sleeve,arm.sleeveStart,arm.sleeveEnd);
+      poseSleeve(arm.sleeve.geometry,side,shoulder,elbow);
+      arm.sleeveStart.copy(shoulder);arm.sleeveEnd.copy(shoulder).lerp(elbow,.60);
       state.joints[arm.name]={shoulder:shoulder.toArray(),elbow:elbow.toArray(),wrist:wrist.toArray()};
       state.hands[arm.name]={wristFlex:.055,wristTwist:side*.10,palmNormal:h.fromArray(data.palmNormal).applyQuaternion(qh).toArray(),fingers:data.fingers.map(chain=>chain.map(point=>{h.fromArray(point);h.y-=ARM_LENGTHS.lower;return h.applyQuaternion(qh).add(wrist).toArray();}))};
     }

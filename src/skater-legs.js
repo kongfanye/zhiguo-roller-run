@@ -54,6 +54,14 @@ function legBind(side, sFrom, sTo, rows, sides, radius, {lateralShift = () => 0}
   return { geometry: g, bind: new Float32Array(pos), dist: new Float32Array(dist) };
 }
 
+// Grids that wrap round meet at a seam with duplicate vertices; average their
+// normals so the seam never shows as a hard shading line.
+export function weldSeamNormals(geometry,rows,cols){
+  const n=geometry.attributes.normal,a=new THREE.Vector3(),b=new THREE.Vector3();
+  for(let i=0;i<=rows;i++){const k=i*(cols+1);a.fromBufferAttribute(n,k).add(b.fromBufferAttribute(n,k+cols)).normalize();n.setXYZ(k,a.x,a.y,a.z);n.setXYZ(k+cols,a.x,a.y,a.z);}
+  n.needsUpdate=true;
+}
+
 // ------------------------------------------------------------------ textures
 function dataTexture(size, pixel, { wrapT = THREE.RepeatWrapping, srgb = true } = {}) {
   const [w, h] = Array.isArray(size) ? size : [size, size], data = new Uint8Array(w * h * 4);
@@ -161,7 +169,7 @@ export function createSkaterLegs() {
   const legs = ['right', 'left'].map((name, i) => {
     const side = i === 0 ? 1 : -1;
     // One continuous skinned leg from inside the shorts to inside the boot.
-    const legData = legBind(side, -.04, .70, 118, 28, legRadius);
+    const legData = legBind(side, -.04, .70, 150, 40, legRadius);
     const leg = mesh(legData.geometry, skin); leg.name = `${name}-continuous-leg`; leg.frustumCulled = false;
     // Loose shorts leg, slightly A-line, ending mid-thigh in a stitched hem.
     const shortsRadius = (s, a) => THREE.MathUtils.lerp(.092, .078, smooth(s, 0, .17)) - .011 * Math.max(0, -Math.sin(a)) ** 2 + .003 * Math.exp(-(((s - .168) / .006) ** 2));
@@ -254,8 +262,8 @@ export function createSkaterLegs() {
       q.setFromAxisAngle(yawAxis, hipYaw); mPelvis.makeRotationFromQuaternion(q).setPosition(hip);
       frame(mThigh, hip, down.subVectors(hip, knee));
       frame(mShin, knee, down.subVectors(knee, ankle), -KNEE);
-      skinLeg(leg.legData, leg.leg.geometry.attributes.position, legWeights); leg.leg.geometry.computeVertexNormals();
-      skinLeg(leg.shortsData, leg.shorts.geometry.attributes.position, shortsWeights); leg.shorts.geometry.computeVertexNormals();
+      skinLeg(leg.legData, leg.leg.geometry.attributes.position, legWeights); leg.leg.geometry.computeVertexNormals(); weldSeamNormals(leg.leg.geometry, 150, 40);
+      skinLeg(leg.shortsData, leg.shorts.geometry.attributes.position, shortsWeights); leg.shorts.geometry.computeVertexNormals(); weldSeamNormals(leg.shorts.geometry, 26, 32);
       leg.shinAxis.subVectors(knee, ankle).normalize();
       leg.bootBottom.copy(ankle).addScaledVector(leg.shinAxis, -0.062); leg.bootTop.copy(ankle).addScaledVector(leg.shinAxis, 0.080);
       placeBetween(leg.bootCuff, leg.bootBottom, leg.bootTop); placeBetween(leg.cuffStrap, leg.bootBottom, leg.bootTop);

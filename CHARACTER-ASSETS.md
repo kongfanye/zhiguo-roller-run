@@ -1,5 +1,36 @@
 # Character and cover assets
 
+## Version 16: refinements from a review against her photos (2026-10-14)
+
+**Face (`tests/make-head-model.py`).** Her one expression stays her smile, now expressed through the shape as well as the texture:
+
+- The eyelid landmarks close into crescents: lower lids rise about 28% of the opening, upper lids drop about 8%, most at the middle of each eye.
+- The mouth corners are drawn in about 5%.
+- The apples of the cheeks lift 2.4 mm and the skin under the lower lids pushes up 1 mm.
+- The nose, chin and jaw are smoothed more than the eyes and lips, and the jaw returns to the neck over 1.6 cm instead of 1.1 cm. The open mouth is recessed only 2.6 mm.
+- The teeth are toned down and shaded by the lips, and the sun shadow under the nose and the nostrils is lifted.
+- The skylight's blue cast on her shaded left cheek is pulled back to her skin hue. That cheek takes the broad colour of her lit right cheek from the same photo, keeping its own detail.
+- The brows are repainted just above the rims with a natural arch; the detector had put her brow landmarks on the rims.
+- The face no longer receives hard shadow-map shadows.
+- The lens outline keeps crisper corners, as on her hexagonal frames.
+
+**Hair (`src/zhiguo-hair.js`):**
+
+- 76 alpha-tested strand cards per side lie over the cap, from the part towards the braid roots, so the outline breaks into locks with feathered tips.
+- Each half starts just off the middle, so a fine line of scalp shows along the part.
+- There are broken hairs along the forehead hairline, two strands falling across the forehead, curtain strands close beside her cheeks, wisps in front of the ears and a soft nape hairline.
+- The braids are thinner, with crossings that vary in spacing and fullness, flyaways along their length and feathered ends below the ties.
+- The hair over the ears and braid roots sits lower.
+
+**Body and outfit (`src/skater-body.js`, `src/arm-mesh.js`, `src/skater-legs.js`):**
+
+- The shirt has a softer, dropped shoulder. Sleeves are lofted each frame from an armhole on the shoulder to a rolled cuff on the upper arm; the armhole follows a quarter of the arm's swing.
+- The shirt hangs in folds that deepen towards a rippled hem, with diagonal folds below the armpits and light folds at the waist sides.
+- The plaid is re-woven from the photo: a sand ground, periwinkle bands and a near-black grid line.
+- The arm and hand mesh is Loop-subdivided once with its skinning weights. The elbow and wrist weights are smoothed, and the shoulder cap under the shirt is slimmed slightly.
+- Fingers are relaxed out of the exported grip by rigid rotations at each joint, so every phalanx keeps its length.
+- The legs use a denser mesh. Wrap-around seams on the legs, shorts and tee have welded normals, so no shading line runs down their fronts.
+
 ## Version 15: body and outfit from her skating photo (2026-10-14)
 
 The body and clothing are rebuilt from scratch from the user's real skating photo, the same photo the cover cutout comes from. The earlier outfit followed the eight-view sheet. All of it is procedural geometry with generated textures; no image is projected onto the body.
