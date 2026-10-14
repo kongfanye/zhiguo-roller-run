@@ -4,11 +4,12 @@
 
 **Face (`tests/make-head-model.py`).** Her one expression stays her smile, now expressed through the shape as well as the texture:
 
-- The eyelid landmarks close into crescents: lower lids rise about 28% of the opening, upper lids drop about 8%, most at the middle of each eye.
+- The eyelid landmarks close slightly into crescents: lower lids rise about 10% of the opening, upper lids drop about 3%. Each eye region then opens 10% taller and 5% wider round its centre, as her eyes read small on the head.
 - The mouth corners are drawn in about 5%.
 - The apples of the cheeks lift 2.4 mm and the skin under the lower lids pushes up 1 mm.
 - The nose, chin and jaw are smoothed more than the eyes and lips, and the jaw returns to the neck over 1.6 cm instead of 1.1 cm. The open mouth is recessed only 2.6 mm.
 - The teeth are toned down and shaded by the lips, and the sun shadow under the nose and the nostrils is lifted.
+- The skin is evened at the patch scale. Above about 3 mm, the photo's cheek sheen, the haze inside the lenses and the shade round the eyes, nose and mouth are flattened and pulled to her skin hue; fine detail, eyes, lips and nostrils are untouched. This cuts patchiness, the spread of the 3–20 mm luminance band, from 0.082 to 0.025.
 - The skylight's blue cast on her shaded left cheek is pulled back to her skin hue. That cheek takes the broad colour of her lit right cheek from the same photo, keeping its own detail.
 - The brows are repainted just above the rims with a natural arch; the detector had put her brow landmarks on the rims.
 - The face no longer receives hard shadow-map shadows.

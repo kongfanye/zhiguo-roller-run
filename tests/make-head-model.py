@@ -82,7 +82,7 @@ H = to_head(face); HI = to_head(iris)
 # crescents; on the 3D head the portrait's lids read a little more open, so the
 # lower lids rise and the upper lids drop slightly, most at the middle of each
 # eye. Shape and texture both use these landmarks, so they stay aligned.
-def narrow_eye(upper, lower, iris, rise=.28, drop=.08):
+def narrow_eye(upper, lower, iris, rise=.10, drop=.03):
     mid = (len(upper) - 1) / 2
     for k, (u, l) in enumerate(zip(upper, lower)):
         centre = 1 - abs(k - mid) / mid
@@ -91,6 +91,14 @@ def narrow_eye(upper, lower, iris, rise=.28, drop=.08):
     HI[iris, 1] += (H[upper[len(upper) // 2], 1] + H[lower[len(lower) // 2], 1]) / 2 - HI[iris, 1]
 narrow_eye([246, 161, 160, 159, 158, 157, 173], [7, 163, 144, 145, 153, 154, 155], 0)
 narrow_eye([466, 388, 387, 386, 385, 384, 398], [249, 390, 373, 374, 380, 381, 382], 5)
+# On the head her eyes read a touch small: open each eye region slightly round
+# its centre (10% taller, 5% wider), carrying the lids and the skin just round them.
+for contour, iris in (([33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7], 0),
+                      ([263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249], 5)):
+    centre = H[contour].mean(0)
+    d = np.hypot((H[:, 1] - centre[1]) / .012, (H[:, 2] - centre[2]) / .020)
+    w = np.exp(-d ** 2)
+    H[:, 1] += (H[:, 1] - centre[1]) * .10 * w; H[:, 2] += (H[:, 2] - centre[2]) * .05 * w
 # On the head the photographed mouth reads a touch wide: draw its corners in by
 # about 5%, fading out across the cheeks.
 MOUTH_Y = H[[13, 14], 1].mean()
@@ -449,6 +457,40 @@ edge_dist = ndimage.distance_transform_edt(face_area) * px_m
 broad = np.stack([lowpass(tex[..., c], face_area.astype(float), .008) for c in range(3)], -1)
 keep = np.clip((edge_dist - .004) / .016, 0, 1)[..., None]
 tex = tex - (broad - TARGET_SKIN) * (1 - keep)
+# Even out the skin. The portrait's sheen on the cheeks, the haze inside the
+# lenses, and the shade round the eyes, nose and mouth make light and dark
+# patches that fight the 3D lighting. Flatten luminance at the patch scale
+# (above ~3 mm) and pull those patches to her skin hue, but leave fine skin
+# detail and the eyes, lips, nostrils and brows untouched.
+def tex_polygon(ids, grow):
+    a_, y_, _ = cylinder(H[ids])
+    m = polygon_mask(np.c_[azimuth_column(a_) * TEX_W, np.interp(y_, YS, np.arange(ROWS + 1)) / ROWS * TEX_H], TA.shape)
+    return ndimage.binary_dilation(m, iterations=max(1, int(round(grow / px_m))))
+EYE_R = [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7]
+EYE_L = [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249]
+LIPS = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146]
+keep_features = tex_polygon(EYE_R, .0022) | tex_polygon(EYE_L, .0022) | tex_polygon(LIPS, .0012) | near([98, 327], .0042)
+feature_soft = ndimage.gaussian_filter(keep_features.astype(float), .0015 / px_m)
+even = face_area * (1 - np.clip(feature_soft * 1.6, 0, 1))
+skin_w = (face_area & ~keep_features).astype(float)
+
+
+def blotchiness(t):
+    l = t @ [.2126, .7152, .0722]
+    band = lowpass(l, skin_w, .003) / np.maximum(lowpass(l, skin_w, .020), 1)
+    sel = (skin_w > 0) & (edge_dist > .006)
+    return float(np.std(band[sel]))
+
+
+before = blotchiness(tex)
+lum = tex @ [.2126, .7152, .0722]
+level = np.median(lum[(skin_w > 0) & (edge_dist > .006)])
+target = .35 * lowpass(lum, skin_w, .020) + .65 * level
+gain = np.clip((target / np.maximum(lowpass(lum, skin_w, .003), 1)) ** .9, .7, 1.5)
+tex *= (1 + (gain - 1) * even)[..., None]
+lum = (tex @ [.2126, .7152, .0722])[..., None]
+tex = tex + (lum * hue - tex) * (.30 * even)[..., None]
+print('skin patchiness (std of 3-20 mm luminance band): %.3f -> %.3f' % (before, blotchiness(tex)))
 face_alpha = np.clip(edge_dist / .007, 0, 1) ** 1.2
 if DEBUG:
     Image.fromarray(np.flipud(np.clip(tex, 0, 255)).astype(np.uint8)).save(DEBUG + '/warp.png')
